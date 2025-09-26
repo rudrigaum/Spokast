@@ -58,6 +58,11 @@
 			path = SpokastUITests;
 			sourceTree = "<group>";
 		};
+		1876522E2E87291D00580DBE /* Application */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Application;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -88,6 +93,7 @@
 		187651F12E8725F200580DBE = {
 			isa = PBXGroup;
 			children = (
+				1876522E2E87291D00580DBE /* Application */,
 				187651FC2E8725F200580DBE /* Spokast */,
 				187652132E8725F600580DBE /* SpokastTests */,
 				1876521D2E8725F600580DBE /* SpokastUITests */,
@@ -122,6 +128,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				187651FC2E8725F200580DBE /* Spokast */,
+				1876522E2E87291D00580DBE /* Application */,
 			);
 			name = Spokast;
 			packageProductDependencies = (
