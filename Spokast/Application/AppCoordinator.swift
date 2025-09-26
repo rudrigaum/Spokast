@@ -10,16 +10,15 @@ import UIKit
 
 final class AppCoordinator: Coordinator {
     var navigationController: UINavigationController
+    private var childCoordinators: [Coordinator] = []
 
     init(navigationController: UINavigationController) {
         self.navigationController = navigationController
     }
 
     func start() {
-        let viewController = UIViewController()
-        viewController.title = "Home"
-        viewController.view.backgroundColor = .systemMint
-
-        navigationController.pushViewController(viewController, animated: false)
+        let homeCoordinator = HomeCoordinator(navigationController: navigationController)
+        childCoordinators.append(homeCoordinator)
+        homeCoordinator.start()
     }
 }
