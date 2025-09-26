@@ -6,10 +6,16 @@
 //
 
 import Foundation
-import Foundation
+
+protocol HomeViewModelDelegate: AnyObject {
+    
+}
 
 final class HomeViewModel {
 
+    weak var delegate: HomeViewModelDelegate?
+
     init() {
+        
     }
 }

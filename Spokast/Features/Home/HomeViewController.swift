@@ -10,10 +10,14 @@ import UIKit
 
 final class HomeViewController: UIViewController {
 
+    private let viewModel: HomeViewModel
+    
     // MARK: - Initialization
-
-    init() {
+    
+    init(viewModel: HomeViewModel) {
+        self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
+        self.viewModel.delegate = self
     }
 
     @available(*, unavailable)
@@ -22,16 +26,21 @@ final class HomeViewController: UIViewController {
     }
 
     // MARK: - View Lifecycle
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupView()
     }
-
+    
     // MARK: - Private Methods
 
     private func setupView() {
         view.backgroundColor = .systemBackground
         title = "Spokast"
     }
+}
+
+// MARK: - HomeViewModelDelegate
+extension HomeViewController: HomeViewModelDelegate {
+
 }
