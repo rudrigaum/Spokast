@@ -55,13 +55,15 @@ extension HomeViewController: UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "PodcastCell", for: indexPath)
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: PodcastCell.reuseIdentifier, for: indexPath) as? PodcastCell else {
+            return UITableViewCell()
+        }
         
-        var content = cell.defaultContentConfiguration()
-        content.text = "Podcast Row \(indexPath.row + 1)"
-        content.secondaryText = "Episode Title"
-        cell.contentConfiguration = content
-
+        cell.configure(
+            title: "Podcast Title Example That Can Be Quite Long",
+            publisher: "Publisher Name"
+        )
+        
         return cell
     }
 }

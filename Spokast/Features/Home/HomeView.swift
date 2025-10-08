@@ -14,7 +14,7 @@ final class HomeView: UIView {
     let podcastsTableView: UITableView = {
         let tableView = UITableView()
         tableView.translatesAutoresizingMaskIntoConstraints = false
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "PodcastCell")
+        tableView.register(PodcastCell.self, forCellReuseIdentifier: PodcastCell.reuseIdentifier)
         return tableView
     }()
 
