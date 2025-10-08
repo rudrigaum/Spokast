@@ -35,9 +35,9 @@ final class HomeViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupView()
+        homeView?.podcastsTableView.dataSource = self
     }
 
-    // MARK: - Private Methods
     private func setupView() {
         title = "Spokast"
     }
@@ -45,4 +45,23 @@ final class HomeViewController: UIViewController {
 
 // MARK: - HomeViewModelDelegate
 extension HomeViewController: HomeViewModelDelegate {
+}
+
+// MARK: - UITableViewDataSource
+extension HomeViewController: UITableViewDataSource {
+
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return 10
+    }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "PodcastCell", for: indexPath)
+        
+        var content = cell.defaultContentConfiguration()
+        content.text = "Podcast Row \(indexPath.row + 1)"
+        content.secondaryText = "Episode Title"
+        cell.contentConfiguration = content
+
+        return cell
+    }
 }

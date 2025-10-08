@@ -11,13 +11,11 @@ import UIKit
 final class HomeView: UIView {
 
     // MARK: - UI Components
-    private let welcomeLabel: UILabel = {
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = "Welcome to Spokast"
-        label.font = .systemFont(ofSize: 24, weight: .bold)
-        label.textColor = .label
-        return label
+    let podcastsTableView: UITableView = {
+        let tableView = UITableView()
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "PodcastCell")
+        return tableView
     }()
 
     // MARK: - Initialization
@@ -39,17 +37,19 @@ final class HomeView: UIView {
     }
 
     private func setupHierarchy() {
-        addSubview(welcomeLabel)
+        addSubview(podcastsTableView)
     }
 
     private func setupConstraints() {
         NSLayoutConstraint.activate([
-            welcomeLabel.centerXAnchor.constraint(equalTo: self.centerXAnchor),
-            welcomeLabel.centerYAnchor.constraint(equalTo: self.centerYAnchor)
+            podcastsTableView.topAnchor.constraint(equalTo: self.topAnchor),
+            podcastsTableView.leadingAnchor.constraint(equalTo: self.leadingAnchor),
+            podcastsTableView.trailingAnchor.constraint(equalTo: self.trailingAnchor),
+            podcastsTableView.bottomAnchor.constraint(equalTo: self.bottomAnchor)
         ])
     }
 
     private func setupConfigurations() {
-        backgroundColor = .systemBackground 
+        backgroundColor = .systemBackground
     }
-}   
+}
