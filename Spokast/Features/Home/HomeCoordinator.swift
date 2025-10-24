@@ -1,5 +1,5 @@
 //
-//  AppCoordinator.swift
+//  HomeCoordinator.swift
 //  Spokast
 //
 //  Created by Rodrigo Cerqueira Reis on 26/09/25.
@@ -8,7 +8,7 @@
 import Foundation
 import UIKit
 
-final class AppCoordinator: Coordinator {
+final class HomeCoordinator: Coordinator {
     var navigationController: UINavigationController
 
     init(navigationController: UINavigationController) {
@@ -16,10 +16,8 @@ final class AppCoordinator: Coordinator {
     }
 
     func start() {
-        let viewController = UIViewController()
-        viewController.title = "Home"
-        viewController.view.backgroundColor = .systemMint
-
-        navigationController.pushViewController(viewController, animated: false)
+        let viewModel = HomeViewModel()
+        let viewController = HomeViewController(viewModel: viewModel)
+        navigationController.pushViewController(viewController, animated: true)
     }
 }

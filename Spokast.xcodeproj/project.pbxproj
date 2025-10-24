@@ -30,7 +30,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		187652222E8725F600580DBE /* Exceptions for "Spokast" folder in "Spokast" target */ = {
+		1839C9262E8730B300B620EE /* Exceptions for "Spokast" folder in "Spokast" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -43,7 +43,7 @@
 		187651FC2E8725F200580DBE /* Spokast */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				187652222E8725F600580DBE /* Exceptions for "Spokast" folder in "Spokast" target */,
+				1839C9262E8730B300B620EE /* Exceptions for "Spokast" folder in "Spokast" target */,
 			);
 			path = Spokast;
 			sourceTree = "<group>";
@@ -56,11 +56,6 @@
 		1876521D2E8725F600580DBE /* SpokastUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = SpokastUITests;
-			sourceTree = "<group>";
-		};
-		1876522E2E87291D00580DBE /* Application */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Application;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -93,7 +88,6 @@
 		187651F12E8725F200580DBE = {
 			isa = PBXGroup;
 			children = (
-				1876522E2E87291D00580DBE /* Application */,
 				187651FC2E8725F200580DBE /* Spokast */,
 				187652132E8725F600580DBE /* SpokastTests */,
 				1876521D2E8725F600580DBE /* SpokastUITests */,
@@ -128,7 +122,6 @@
 			);
 			fileSystemSynchronizedGroups = (
 				187651FC2E8725F200580DBE /* Spokast */,
-				1876522E2E87291D00580DBE /* Application */,
 			);
 			name = Spokast;
 			packageProductDependencies = (
