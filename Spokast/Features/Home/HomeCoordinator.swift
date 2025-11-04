@@ -16,8 +16,10 @@ final class HomeCoordinator: Coordinator {
     }
 
     func start() {
-        let viewModel = HomeViewModel()
+        let apiService = APIService()
+        let viewModel = HomeViewModel(apiService: apiService)
         let viewController = HomeViewController(viewModel: viewModel)
+
         navigationController.pushViewController(viewController, animated: true)
     }
 }

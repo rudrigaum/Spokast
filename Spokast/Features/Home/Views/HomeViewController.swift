@@ -36,6 +36,7 @@ final class HomeViewController: UIViewController {
         super.viewDidLoad()
         setupView()
         homeView?.podcastsTableView.dataSource = self
+        viewModel.fetchPodcasts()
     }
 
     private func setupView() {
@@ -45,23 +46,35 @@ final class HomeViewController: UIViewController {
 
 // MARK: - HomeViewModelDelegate
 extension HomeViewController: HomeViewModelDelegate {
+
+    func didFetchPodcastsSuccessfully() {
+        homeView?.podcastsTableView.reloadData()
+        print("Successfully fetched podcasts!")
+    }
+
+    func didFailToFetchPodcasts(with error: String) {
+        print("Failed to fetch podcasts with error: \(error)")
+    }
 }
 
 // MARK: - UITableViewDataSource
 extension HomeViewController: UITableViewDataSource {
-
+    
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return 10
+        return viewModel.podcasts.count
     }
-
+    
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: PodcastCell.reuseIdentifier, for: indexPath) as? PodcastCell else {
             return UITableViewCell()
         }
         
+        let podcast = viewModel.podcasts[indexPath.row]
+        
         cell.configure(
-            title: "Podcast Title Example That Can Be Quite Long",
-            publisher: "Publisher Name"
+            title: podcast.collectionName,
+            publisher: podcast.artistName,
+            imageUrlString: podcast.artworkUrl100
         )
         
         return cell

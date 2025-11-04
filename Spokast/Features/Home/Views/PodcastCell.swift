@@ -7,10 +7,10 @@
 
 import Foundation
 import UIKit
+import Kingfisher
 
 final class PodcastCell: UITableViewCell {
 
-    // MARK: - Properties
     static let reuseIdentifier = "PodcastCell"
 
     // MARK: - UI Components
@@ -18,88 +18,92 @@ final class PodcastCell: UITableViewCell {
         let imageView = UIImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.contentMode = .scaleAspectFill
-        imageView.clipsToBounds = true
         imageView.layer.cornerRadius = 8
+        imageView.clipsToBounds = true
         imageView.backgroundColor = .secondarySystemBackground
         return imageView
     }()
-
+    
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.font = .preferredFont(forTextStyle: .headline)
-        label.adjustsFontForContentSizeCategory = true
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .systemFont(ofSize: 16, weight: .semibold)
         label.numberOfLines = 2
-        label.textColor = .label
         return label
     }()
-
+    
     private let publisherLabel: UILabel = {
         let label = UILabel()
-        label.font = .preferredFont(forTextStyle: .subheadline)
-        label.adjustsFontForContentSizeCategory = true
-        label.numberOfLines = 1
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = .systemFont(ofSize: 14)
         label.textColor = .secondaryLabel
         return label
-    }()
-
-    private lazy var labelsStackView: UIStackView = {
-        let stackView = UIStackView(arrangedSubviews: [titleLabel, publisherLabel])
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-        stackView.axis = .vertical
-        stackView.spacing = 4
-        return stackView
-    }()
-
-    private lazy var mainStackView: UIStackView = {
-        let stackView = UIStackView(arrangedSubviews: [podcastImageView, labelsStackView])
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-        stackView.axis = .horizontal
-        stackView.spacing = 12
-        stackView.alignment = .center
-        return stackView
     }()
 
     // MARK: - Initialization
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-        setupLayout()
+        setupUI()
     }
-
+    
     @available(*, unavailable)
     required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented for PodcastCell")
+        fatalError("init(coder:) has not been implemented")
     }
 
-    // MARK: - Public Methods
-    func configure(title: String, publisher: String) {
+    // MARK: - Configuration
+    func configure(title: String, publisher: String, imageUrlString: String) {
         titleLabel.text = title
         publisherLabel.text = publisher
+        
+        guard let imageUrl = URL(string: imageUrlString) else {
+            podcastImageView.image = UIImage(systemName: "mic.slash.circle")
+            return
+        }
+        
+        let placeholder = UIImage(systemName: "mic.circle.fill")
+        let options: KingfisherOptionsInfo = [
+            .transition(.fade(0.3)),
+            .cacheOriginalImage
+        ]
+        
+        podcastImageView.kf.setImage(
+            with: imageUrl,
+            placeholder: placeholder,
+            options: options
+        )
     }
 
-    // MARK: - Private Methods
-    private func setupLayout() {
-        setupHierarchy()
-        setupConstraints()
-        setupConfigurations()
-    }
-
-    private func setupHierarchy() {
+    // MARK: - UI Setup
+    private func setupUI() {
+        let textStackView = UIStackView(arrangedSubviews: [titleLabel, publisherLabel])
+        textStackView.axis = .vertical
+        textStackView.spacing = 4
+        
+        let mainStackView = UIStackView(arrangedSubviews: [podcastImageView, textStackView])
+        mainStackView.translatesAutoresizingMaskIntoConstraints = false
+        mainStackView.axis = .horizontal
+        mainStackView.spacing = 12
+        mainStackView.alignment = .center
+        
         contentView.addSubview(mainStackView)
-    }
-
-    private func setupConstraints() {
+        
         NSLayoutConstraint.activate([
             podcastImageView.widthAnchor.constraint(equalToConstant: 70),
-            podcastImageView.heightAnchor.constraint(equalTo: podcastImageView.widthAnchor),
-
-            mainStackView.topAnchor.constraint(equalTo: contentView.layoutMarginsGuide.topAnchor),
-            mainStackView.leadingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.leadingAnchor),
-            mainStackView.trailingAnchor.constraint(equalTo: contentView.layoutMarginsGuide.trailingAnchor),
-            mainStackView.bottomAnchor.constraint(equalTo: contentView.layoutMarginsGuide.bottomAnchor)
+            podcastImageView.heightAnchor.constraint(equalToConstant: 70),
+            
+            mainStackView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
+            mainStackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -12),
+            mainStackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            mainStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16)
         ])
     }
-
-    private func setupConfigurations() {
-        accessoryType = .disclosureIndicator
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        podcastImageView.kf.cancelDownloadTask()
+        podcastImageView.image = nil
+        titleLabel.text = nil
+        publisherLabel.text = nil
     }
 }
