@@ -9,6 +9,7 @@ import Foundation
 import UIKit
 
 final class HomeCoordinator: Coordinator {
+    
     var navigationController: UINavigationController
 
     init(navigationController: UINavigationController) {
@@ -19,7 +20,18 @@ final class HomeCoordinator: Coordinator {
         let apiService = APIService()
         let viewModel = HomeViewModel(apiService: apiService)
         let viewController = HomeViewController(viewModel: viewModel)
-
+        
+        viewController.delegate = self
+        
         navigationController.pushViewController(viewController, animated: true)
+    }
+}
+
+// MARK: - HomeViewControllerDelegate
+extension HomeCoordinator: HomeViewControllerDelegate {
+    
+    func didSelectPodcast(_ podcast: Podcast) {
+        print("Coordinator did receive tap for podcast: \(podcast.collectionName)")
+        
     }
 }

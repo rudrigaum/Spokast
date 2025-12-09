@@ -12,6 +12,8 @@ struct Podcast: Decodable {
     let collectionName: String
     let artworkUrl100: String
     let feedUrl: String?
+    let artworkUrl600: String?
+    let primaryGenreName: String?
 }
 
 struct SearchResult: Decodable {

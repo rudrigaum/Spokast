@@ -1,4 +1,3 @@
-//
 //  HomeViewController.swift
 //  Spokast
 //
@@ -8,11 +7,17 @@
 import Foundation
 import UIKit
 
+// MARK: - HomeViewControllerDelegate
+protocol HomeViewControllerDelegate: AnyObject {
+    func didSelectPodcast(_ podcast: Podcast)
+}
+
 final class HomeViewController: UIViewController {
 
     // MARK: - Properties
     private let viewModel: HomeViewModel
     private var homeView: HomeView?
+    weak var delegate: HomeViewControllerDelegate?
 
     // MARK: - Initialization
     init(viewModel: HomeViewModel) {
@@ -35,7 +40,11 @@ final class HomeViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupView()
+        
         homeView?.podcastsTableView.dataSource = self
+        homeView?.podcastsTableView.delegate = self
+        
+        homeView?.podcastsTableView.register(PodcastCell.self, forCellReuseIdentifier: PodcastCell.reuseIdentifier)
         viewModel.fetchPodcasts()
     }
 
@@ -46,7 +55,6 @@ final class HomeViewController: UIViewController {
 
 // MARK: - HomeViewModelDelegate
 extension HomeViewController: HomeViewModelDelegate {
-
     func didFetchPodcastsSuccessfully() {
         homeView?.podcastsTableView.reloadData()
         print("Successfully fetched podcasts!")
@@ -66,7 +74,7 @@ extension HomeViewController: UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: PodcastCell.reuseIdentifier, for: indexPath) as? PodcastCell else {
-            return UITableViewCell()
+            fatalError("Could not dequeue cell with identifier: \(PodcastCell.reuseIdentifier)")
         }
         
         let podcast = viewModel.podcasts[indexPath.row]
@@ -78,5 +86,16 @@ extension HomeViewController: UITableViewDataSource {
         )
         
         return cell
+    }
+}
+
+// MARK: - UITableViewDelegate
+extension HomeViewController: UITableViewDelegate {
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        
+        let selectedPodcast = viewModel.podcasts[indexPath.row]
+        delegate?.didSelectPodcast(selectedPodcast)
     }
 }
