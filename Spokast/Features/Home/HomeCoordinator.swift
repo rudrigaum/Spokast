@@ -29,9 +29,9 @@ final class HomeCoordinator: Coordinator {
 
 // MARK: - HomeViewControllerDelegate
 extension HomeCoordinator: HomeViewControllerDelegate {
-    
     func didSelectPodcast(_ podcast: Podcast) {
-        print("Coordinator did receive tap for podcast: \(podcast.collectionName)")
-        
+        let detailViewModel = PodcastDetailViewModel(podcast: podcast)
+        let detailViewController = PodcastDetailViewController(viewModel: detailViewModel)
+        navigationController.pushViewController(detailViewController, animated: true)
     }
 }
