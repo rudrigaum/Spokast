@@ -11,6 +11,15 @@ import UIKit
 final class PodcastDetailView: UIView {
 
     // MARK: - UI Components
+    lazy var tableView: UITableView = {
+        let tableView = UITableView()
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        tableView.backgroundColor = .systemBackground
+        tableView.separatorStyle = .singleLine
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "EpisodeCell")
+        return tableView
+    }()
+    
     let imageView: UIImageView = {
         let imageView = UIImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
@@ -50,13 +59,19 @@ final class PodcastDetailView: UIView {
         return label
     }()
 
-    private lazy var mainStackView: UIStackView = {
+    private lazy var headerStackView: UIStackView = {
         let stack = UIStackView(arrangedSubviews: [imageView, titleLabel, artistLabel, genreLabel])
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.axis = .vertical
         stack.spacing = 16
         stack.alignment = .center
         return stack
+    }()
+    
+    private let headerContainerView: UIView = {
+        let view = UIView()
+        view.frame = CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 400)
+        return view
     }()
 
     // MARK: - Initialization
@@ -75,21 +90,54 @@ final class PodcastDetailView: UIView {
         titleLabel.text = viewModel.title
         artistLabel.text = viewModel.artist
         genreLabel.text = viewModel.genre.uppercased()
+        layoutTableHeaderView()
     }
 
     // MARK: - UI Setup
     private func setupUI() {
         backgroundColor = .systemBackground
+        addSubview(tableView)
+        headerContainerView.addSubview(headerStackView)
         
-        addSubview(mainStackView)
+        let stackLeading = headerStackView.leadingAnchor.constraint(equalTo: headerContainerView.leadingAnchor, constant: 24)
+        let stackTrailing = headerStackView.trailingAnchor.constraint(equalTo: headerContainerView.trailingAnchor, constant: -24)
+      
+        stackLeading.priority = UILayoutPriority(999)
+        stackTrailing.priority = UILayoutPriority(999)
         
         NSLayoutConstraint.activate([
             imageView.heightAnchor.constraint(equalToConstant: 200),
             imageView.widthAnchor.constraint(equalToConstant: 200),
             
-            mainStackView.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor, constant: 32),
-            mainStackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 24),
-            mainStackView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -24)
+            headerStackView.topAnchor.constraint(equalTo: headerContainerView.topAnchor, constant: 32),
+            headerStackView.bottomAnchor.constraint(equalTo: headerContainerView.bottomAnchor, constant: -32),
+            
+            stackLeading,
+            stackTrailing
         ])
+        
+        tableView.tableHeaderView = headerContainerView
+        
+        NSLayoutConstraint.activate([
+            tableView.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor),
+            tableView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            tableView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            tableView.bottomAnchor.constraint(equalTo: bottomAnchor)
+        ])
+    }
+    
+    // MARK: - Layout Helper
+    private func layoutTableHeaderView() {
+        guard let header = tableView.tableHeaderView else { return }
+        
+        header.setNeedsLayout()
+        header.layoutIfNeeded()
+        
+        let size = header.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize)
+        
+        if header.frame.height != size.height {
+            header.frame.size.height = size.height
+            tableView.tableHeaderView = header
+        }
     }
 }

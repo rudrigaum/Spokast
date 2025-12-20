@@ -6,15 +6,21 @@
 //
 
 import Foundation
+import Combine
 
 final class PodcastDetailViewModel {
 
     // MARK: - Properties
     private let podcast: Podcast
+    private let service: APIService
+    
+    @Published private(set) var episodes: [Episode] = []
+    @Published private(set) var errorMessage: String?
     
     // MARK: - Initialization
-    init(podcast: Podcast) {
+    init(podcast: Podcast, service: APIService) {
         self.podcast = podcast
+        self.service = service
     }
     
     // MARK: - Outputs
@@ -35,7 +41,21 @@ final class PodcastDetailViewModel {
         return podcast.primaryGenreName ?? "Podcast"
     }
     
-    var description: String {
-        return "Podcast details and episodes coming soon..."
+    // MARK: - Methods
+    func fetchEpisodes() {
+        Task {
+            do {
+                let fetchedEpisodes = try await service.fetchEpisodes(for: podcast.trackId ?? 0)
+                
+                await MainActor.run {
+                    self.episodes = fetchedEpisodes
+                }
+            } catch {
+                await MainActor.run {
+                    self.errorMessage = "Could not load episodes. Please try again."
+                    print("Error fetching episodes: \(error)")
+                }
+            }
+        }
     }
 }

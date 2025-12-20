@@ -30,7 +30,8 @@ final class HomeCoordinator: Coordinator {
 // MARK: - HomeViewControllerDelegate
 extension HomeCoordinator: HomeViewControllerDelegate {
     func didSelectPodcast(_ podcast: Podcast) {
-        let detailViewModel = PodcastDetailViewModel(podcast: podcast)
+        let service = APIService()
+        let detailViewModel = PodcastDetailViewModel(podcast: podcast, service: service)
         let detailViewController = PodcastDetailViewController(viewModel: detailViewModel)
         navigationController.pushViewController(detailViewController, animated: true)
     }
