@@ -8,6 +8,7 @@
 import Foundation
 
 struct Podcast: Decodable {
+    let trackId: Int?
     let artistName: String
     let collectionName: String
     let artworkUrl100: String

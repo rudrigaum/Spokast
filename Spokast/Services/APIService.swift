@@ -7,6 +7,12 @@
 
 import Foundation
 
+enum APIServiceError: Error {
+    case invalidURL
+    case invalidResponse
+    case decodingError
+}
+
 final class APIService: APIServiceProtocol {
 
     func fetchPodcasts(searchTerm: String) async throws -> [Podcast] {
@@ -45,5 +51,47 @@ final class APIService: APIServiceProtocol {
         ]
 
         return components.url
+    }
+}
+
+private struct EpisodeLookupResult: Decodable {
+    let resultCount: Int
+    let results: [Episode]
+}
+
+// MARK: - Extension for Episodes
+extension APIService {
+    
+    func fetchEpisodes(for podcastId: Int) async throws -> [Episode] {
+        
+        var components = URLComponents(string: "https://itunes.apple.com/lookup")
+        components?.queryItems = [
+            URLQueryItem(name: "id", value: "\(podcastId)"),
+            URLQueryItem(name: "entity", value: "podcastEpisode")
+        ]
+        
+        guard let url = components?.url else {
+            throw APIServiceError.invalidURL
+        }
+        
+        let (data, response) = try await URLSession.shared.data(from: url)
+        
+        guard let httpResponse = response as? HTTPURLResponse,
+              (200...299).contains(httpResponse.statusCode) else {
+            throw APIServiceError.invalidResponse
+        }
+        
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        
+        do {
+            let lookupResult = try decoder.decode(EpisodeLookupResult.self, from: data)
+            let episodes = Array(lookupResult.results.dropFirst())
+            return episodes
+            
+        } catch {
+            print("Decoding error: \(error)")
+            throw APIServiceError.decodingError
+        }
     }
 }
