@@ -16,7 +16,7 @@ final class PodcastDetailView: UIView {
         tableView.translatesAutoresizingMaskIntoConstraints = false
         tableView.backgroundColor = .systemBackground
         tableView.separatorStyle = .singleLine
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "EpisodeCell")
+        tableView.register(EpisodeCell.self, forCellReuseIdentifier: EpisodeCell.reuseIdentifier)
         return tableView
     }()
     
