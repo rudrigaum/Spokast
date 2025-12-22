@@ -78,6 +78,8 @@ final class EpisodeCell: UITableViewCell {
         let durationText = formatDuration(millis: episode.trackTimeMillis)
         
         descriptionLabel.text = "\(dateString) • \(durationText)"
+        playImageView.image = UIImage(systemName: "play.fill")
+        playIconContainer.backgroundColor = .systemPurple.withAlphaComponent(0.1)
     }
     
     // MARK: - Helpers
@@ -93,6 +95,16 @@ final class EpisodeCell: UITableViewCell {
         } else {
             return "\(minutes) min"
         }
+    }
+    
+    func updatePlaybackState(isPlaying: Bool) {
+        let iconName = isPlaying ? "pause.fill" : "play.fill"
+        
+        UIView.transition(with: playImageView, duration: 0.2, options: .transitionCrossDissolve) {
+            self.playImageView.image = UIImage(systemName: iconName)
+        }
+        
+        playIconContainer.backgroundColor = isPlaying ? .systemPurple.withAlphaComponent(0.3) : .systemPurple.withAlphaComponent(0.1)
     }
 
     // MARK: - UI Setup

@@ -75,7 +75,6 @@ final class PodcastDetailViewController: UIViewController {
             }
             .store(in: &cancellables)
         
-        // Observa erros
         viewModel.$errorMessage
             .compactMap { $0 }
             .receive(on: DispatchQueue.main)
@@ -84,6 +83,29 @@ final class PodcastDetailViewController: UIViewController {
                 print("❌ ERRO: \(message)")
             }
             .store(in: &cancellables)
+        
+        Publishers.CombineLatest(viewModel.$currentPlayingEpisodeId, viewModel.$isPlayerPaused)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] (playingId, isPaused) in
+                guard let self = self else { return }
+                self.updateVisibleCells(playingId: playingId, isPaused: isPaused)
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func updateVisibleCells(playingId: Int?, isPaused: Bool) {
+        guard let visibleRows = customView?.tableView.indexPathsForVisibleRows else { return }
+        
+        for indexPath in visibleRows {
+            guard let cell = customView?.tableView.cellForRow(at: indexPath) as? EpisodeCell else { continue }
+            let episode = viewModel.episodes[indexPath.row]
+            
+            if episode.trackId == playingId {
+                cell.updatePlaybackState(isPlaying: !isPaused)
+            } else {
+                cell.updatePlaybackState(isPlaying: false)
+            }
+        }
     }
 }
 
@@ -96,11 +118,19 @@ extension PodcastDetailViewController: UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: EpisodeCell.reuseIdentifier, for: indexPath) as? EpisodeCell else {
-            fatalError("Could not dequeue EpisodeCell")
+            fatalError("Could not dequeue EpisodeCell.")
         }
         
         let episode = viewModel.episodes[indexPath.row]
         cell.configure(with: episode)
+        
+        if let playingId = viewModel.currentPlayingEpisodeId, playingId == episode.trackId {
+            let isPlaying = !viewModel.isPlayerPaused
+            cell.updatePlaybackState(isPlaying: isPlaying)
+        } else {
+            cell.updatePlaybackState(isPlaying: false)
+        }
+        
         return cell
     }
 }
