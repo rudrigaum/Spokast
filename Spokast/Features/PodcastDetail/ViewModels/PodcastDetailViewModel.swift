@@ -13,14 +13,16 @@ final class PodcastDetailViewModel {
     // MARK: - Properties
     private let podcast: Podcast
     private let service: APIService
+    private let audioService: AudioPlayerProtocol
     
     @Published private(set) var episodes: [Episode] = []
     @Published private(set) var errorMessage: String?
     
     // MARK: - Initialization
-    init(podcast: Podcast, service: APIService) {
+    init(podcast: Podcast, service: APIService, audioService: AudioPlayerProtocol = AudioService.shared) {
         self.podcast = podcast
         self.service = service
+        self.audioService = audioService
     }
     
     // MARK: - Outputs
@@ -41,7 +43,7 @@ final class PodcastDetailViewModel {
         return podcast.primaryGenreName ?? "Podcast"
     }
     
-    // MARK: - Methods
+    // MARK: - API Methods
     func fetchEpisodes() {
         Task {
             do {
@@ -57,5 +59,18 @@ final class PodcastDetailViewModel {
                 }
             }
         }
+    }
+    
+    // MARK: - Audio Methods
+    func playEpisode(at index: Int) {
+        guard episodes.indices.contains(index) else { return }
+        let episode = episodes[index]
+        
+        guard let urlString = episode.previewUrl, let url = URL(string: urlString) else {
+            self.errorMessage = "Sorry, audio preview not available for this episode."
+            return
+        }
+        
+        audioService.play(url: url)
     }
 }
