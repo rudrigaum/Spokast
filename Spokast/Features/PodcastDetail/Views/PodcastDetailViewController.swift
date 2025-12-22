@@ -37,6 +37,7 @@ final class PodcastDetailViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         customView?.tableView.dataSource = self
+        customView?.tableView.delegate = self
         setupConfiguration()
         setupBindings()
         viewModel.fetchEpisodes()
@@ -101,5 +102,14 @@ extension PodcastDetailViewController: UITableViewDataSource {
         let episode = viewModel.episodes[indexPath.row]
         cell.configure(with: episode)
         return cell
+    }
+}
+
+// MARK: - UITableViewDelegate
+extension PodcastDetailViewController: UITableViewDelegate {
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        viewModel.playEpisode(at: indexPath.row)
     }
 }
