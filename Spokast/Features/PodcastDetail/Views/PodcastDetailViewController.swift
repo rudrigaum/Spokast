@@ -94,22 +94,12 @@ extension PodcastDetailViewController: UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "EpisodeCell", for: indexPath)
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: EpisodeCell.reuseIdentifier, for: indexPath) as? EpisodeCell else {
+            fatalError("Could not dequeue EpisodeCell")
+        }
+        
         let episode = viewModel.episodes[indexPath.row]
-        
-        var content = cell.defaultContentConfiguration()
-        content.text = episode.trackName
-        
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateStyle = .medium
-        let dateString = dateFormatter.string(from: episode.releaseDate)
-        
-        content.secondaryText = dateString
-        content.secondaryTextProperties.color = .secondaryLabel
-        
-        cell.contentConfiguration = content
-        cell.accessoryType = .disclosureIndicator
-        
+        cell.configure(with: episode)
         return cell
     }
 }
