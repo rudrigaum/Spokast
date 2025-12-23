@@ -17,10 +17,13 @@ enum AudioPlayerState: Equatable {
 
 protocol AudioPlayerProtocol {
     var playerState: CurrentValueSubject<AudioPlayerState, Never> { get }
+    var progressPublisher: PassthroughSubject<(currentTime: Double, duration: Double), Never> { get }
+    
     func play(url: URL)
     func pause()
     func stop()
     func toggle(url: URL)
+    func seek(to time: Double)
 }
 
 final class AudioService: AudioPlayerProtocol {
@@ -29,7 +32,10 @@ final class AudioService: AudioPlayerProtocol {
     
     // MARK: - Properties
     private var player: AVPlayer?
+    private var timeObserverToken: Any?
+    
     let playerState = CurrentValueSubject<AudioPlayerState, Never>(.stopped)
+    let progressPublisher = PassthroughSubject<(currentTime: Double, duration: Double), Never>()
     
     // MARK: - Initialization
     private init() {
@@ -44,24 +50,27 @@ final class AudioService: AudioPlayerProtocol {
             return
         }
         
+        stop()
+        
         let playerItem = AVPlayerItem(url: url)
         player = AVPlayer(playerItem: playerItem)
         player?.play()
         
+        setupPeriodicTimeObserver()
+        
         playerState.send(.playing(url: url))
-        print("▶️ AudioService: Playing \(url.lastPathComponent)")
     }
     
     func pause() {
         player?.pause()
         if case .playing(let url) = playerState.value {
             playerState.send(.paused(url: url))
-            print("⏸️ AudioService: Paused")
         }
     }
     
     func stop() {
         player?.pause()
+        removePeriodicTimeObserver()
         player = nil
         playerState.send(.stopped)
     }
@@ -69,20 +78,17 @@ final class AudioService: AudioPlayerProtocol {
     func toggle(url: URL) {
         switch playerState.value {
         case .playing(let currentUrl):
-            if currentUrl == url {
-                pause()
-            } else {
-                play(url: url)
-            }
+            if currentUrl == url { pause() } else { play(url: url) }
         case .paused(let currentUrl):
-            if currentUrl == url {
-                play(url: url)
-            } else {
-                play(url: url)
-            }
+            if currentUrl == url { play(url: url) } else { play(url: url) }
         case .stopped:
             play(url: url)
         }
+    }
+    
+    func seek(to time: Double) {
+        let cmTime = CMTime(seconds: time, preferredTimescale: 1000)
+        player?.seek(to: cmTime)
     }
     
     // MARK: - Private Setup
@@ -92,6 +98,29 @@ final class AudioService: AudioPlayerProtocol {
             try AVAudioSession.sharedInstance().setActive(true)
         } catch {
             print("❌ AudioService Error: Failed to setup audio session: \(error)")
+        }
+    }
+    
+    // MARK: - Time Observation (Core Logic)
+    private func setupPeriodicTimeObserver() {
+        guard let player = player else { return }
+        
+        let interval = CMTime(seconds: 0.5, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
+        
+        timeObserverToken = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
+            guard let self = self, let item = self.player?.currentItem else { return }
+            
+            let currentTime = time.seconds
+            let duration = item.duration.seconds.isFinite ? item.duration.seconds : 0.0
+            
+            self.progressPublisher.send((currentTime: currentTime, duration: duration))
+        }
+    }
+    
+    private func removePeriodicTimeObserver() {
+        if let token = timeObserverToken {
+            player?.removeTimeObserver(token)
+            timeObserverToken = nil
         }
     }
 }

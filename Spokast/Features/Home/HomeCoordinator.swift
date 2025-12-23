@@ -11,11 +11,11 @@ import UIKit
 final class HomeCoordinator: Coordinator {
     
     var navigationController: UINavigationController
-
+    
     init(navigationController: UINavigationController) {
         self.navigationController = navigationController
     }
-
+    
     func start() {
         let apiService = APIService()
         let viewModel = HomeViewModel(apiService: apiService)
@@ -25,6 +25,24 @@ final class HomeCoordinator: Coordinator {
         
         navigationController.pushViewController(viewController, animated: true)
     }
+    
+    // MARK: - Navigation to Player
+    func presentPlayer(for episode: Episode, podcastImageURL: URL?) {
+        let playerViewModel = PlayerViewModel(
+            episode: episode,
+            podcastImageURL: podcastImageURL
+        )
+        
+        let playerViewController = PlayerViewController(viewModel: playerViewModel)
+        
+        if let sheet = playerViewController.sheetPresentationController {
+            sheet.detents = [.large()]
+            sheet.prefersGrabberVisible = true
+            sheet.prefersScrollingExpandsWhenScrolledToEdge = false
+        }
+        
+        navigationController.present(playerViewController, animated: true)
+    }
 }
 
 // MARK: - HomeViewControllerDelegate
@@ -33,6 +51,7 @@ extension HomeCoordinator: HomeViewControllerDelegate {
         let service = APIService()
         let detailViewModel = PodcastDetailViewModel(podcast: podcast, service: service)
         let detailViewController = PodcastDetailViewController(viewModel: detailViewModel)
+        detailViewController.coordinator = self
         navigationController.pushViewController(detailViewController, animated: true)
     }
 }
