@@ -16,12 +16,17 @@ final class PlayerViewModel {
     private let audioService: AudioPlayerProtocol
     
     private var cancellables = Set<AnyCancellable>()
+    private var currentDuration: Double = 0.0
     
     // MARK: - Outputs
     @Published private(set) var title: String
     @Published private(set) var artist: String
     @Published private(set) var coverURL: URL?
     @Published private(set) var isPlaying: Bool = false
+    
+    @Published private(set) var progressValue: Float = 0.0
+    @Published private(set) var currentTimeText: String = "00:00"
+    @Published private(set) var durationText: String = "--:--"
     
     // MARK: - Initialization
     init(episode: Episode,
@@ -47,33 +52,77 @@ final class PlayerViewModel {
     }
     
     func didTapForward() {
-        print(">> Forward 30s tapped (Not implemented yet)")
+        let newTime = (progressValue * Float(currentDuration)) + 30
+        audioService.seek(to: Double(newTime))
     }
     
     func didTapRewind() {
-        print("<< Rewind 15s tapped (Not implemented yet)")
+        let newTime = (progressValue * Float(currentDuration)) - 15
+        audioService.seek(to: Double(newTime))
+    }
+    
+    func didScrub(to value: Float) {
+        let targetTime = Double(value) * currentDuration
+        audioService.seek(to: targetTime)
     }
     
     // MARK: - Private Setup
     private func setupBindings() {
+        bindPlayerState()
+        bindProgress()
+    }
+    
+    private func bindPlayerState() {
         audioService.playerState
             .receive(on: DispatchQueue.main)
             .sink { [weak self] state in
-                guard let self = self else { return }
-                
-                switch state {
-                case .playing(let url):
-                    self.isPlaying = (url.absoluteString == self.episode.previewUrl)
-                    
-                case .paused(let url):
-                    if url.absoluteString == self.episode.previewUrl {
-                        self.isPlaying = false
-                    }
-                    
-                case .stopped:
-                    self.isPlaying = false
-                }
+                self?.handlePlayerStateChange(state)
             }
             .store(in: &cancellables)
+    }
+    
+    private func bindProgress() {
+        audioService.progressPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] (currentTime, duration) in
+                self?.handleProgressUpdate(currentTime: currentTime, duration: duration)
+            }
+            .store(in: &cancellables)
+    }
+    
+    // MARK: - Helper Handlers
+    private func handlePlayerStateChange(_ state: AudioPlayerState) {
+        switch state {
+        case .playing(let url):
+            self.isPlaying = (url.absoluteString == self.episode.previewUrl)
+        case .paused(let url):
+            if url.absoluteString == self.episode.previewUrl { self.isPlaying = false }
+        case .stopped:
+            self.isPlaying = false
+        }
+    }
+    
+    private func handleProgressUpdate(currentTime: Double, duration: Double) {
+        self.currentDuration = duration
+        self.currentTimeText = self.formatTime(currentTime)
+        self.durationText = self.formatTime(duration)
+        
+        if duration > 0 {
+            self.progressValue = Float(currentTime / duration)
+        } else {
+            self.progressValue = 0.0
+        }
+    }
+    
+    private func formatTime(_ time: Double) -> String {
+        let seconds = Int(time) % 60
+        let minutes = (Int(time) / 60) % 60
+        let hours = Int(time) / 3600
+        
+        if hours > 0 {
+            return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+        } else {
+            return String(format: "%02d:%02d", minutes, seconds)
+        }
     }
 }

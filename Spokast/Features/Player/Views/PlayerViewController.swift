@@ -11,29 +11,29 @@ import Combine
 import Kingfisher
 
 final class PlayerViewController: UIViewController {
-
+    
     // MARK: - Properties
     private let viewModel: PlayerViewModel
     private var customView: PlayerView?
     private var cancellables = Set<AnyCancellable>()
-
+    
     // MARK: - Initialization
     init(viewModel: PlayerViewModel) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
     }
-
+    
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
+    
     // MARK: - Lifecycle
     override func loadView() {
         self.customView = PlayerView()
         self.view = customView
     }
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupBindings()
@@ -43,10 +43,15 @@ final class PlayerViewController: UIViewController {
     // MARK: - Setup Actions
     private func setupActions() {
         guard let customView = customView else { return }
-
+        
         customView.playPauseButton.addTarget(self, action: #selector(didTapPlayPause), for: .touchUpInside)
         customView.forwardButton.addTarget(self, action: #selector(didTapForward), for: .touchUpInside)
         customView.rewindButton.addTarget(self, action: #selector(didTapRewind), for: .touchUpInside)
+        customView.progressSlider.addTarget(self, action: #selector(didScrubSlider(_:)), for: .valueChanged)
+    }
+    
+    @objc private func didScrubSlider(_ sender: UISlider) {
+        viewModel.didScrub(to: sender.value)
     }
     
     // MARK: - Actions Handlers
@@ -69,6 +74,8 @@ final class PlayerViewController: UIViewController {
         bindHeaderData(to: customView)
         bindCoverImage(to: customView)
         bindPlayerState(to: customView)
+        bindPlayerProgress(to: customView)
+        bindTimeLabels(to: customView)
     }
     
     private func bindHeaderData(to view: PlayerView) {
@@ -98,6 +105,27 @@ final class PlayerViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak view] isPlaying in
                 view?.updatePlayButtonState(isPlaying: isPlaying)
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func bindPlayerProgress(to view: PlayerView) {
+        viewModel.$progressValue
+            .receive(on: DispatchQueue.main)
+            .sink { [weak view] value in
+                if view?.progressSlider.isTracking == false {
+                    view?.progressSlider.setValue(value, animated: true)
+                }
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func bindTimeLabels(to view: PlayerView) {
+        Publishers.CombineLatest(viewModel.$currentTimeText, viewModel.$durationText)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak view] (current, total) in
+                view?.currentTimeLabel.text = current
+                view?.totalTimeLabel.text = total
             }
             .store(in: &cancellables)
     }
