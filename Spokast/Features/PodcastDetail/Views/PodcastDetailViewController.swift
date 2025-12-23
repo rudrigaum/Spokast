@@ -16,6 +16,7 @@ final class PodcastDetailViewController: UIViewController {
     private let viewModel: PodcastDetailViewModel
     private var customView: PodcastDetailView?
     private var cancellables = Set<AnyCancellable>()
+    weak var coordinator: HomeCoordinator?
 
     // MARK: - Initialization
     init(viewModel: PodcastDetailViewModel) {
@@ -141,5 +142,7 @@ extension PodcastDetailViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         viewModel.playEpisode(at: indexPath.row)
+        let episode = viewModel.episodes[indexPath.row]
+        coordinator?.presentPlayer(for: episode, podcastImageURL: viewModel.coverImageURL)
     }
 }
