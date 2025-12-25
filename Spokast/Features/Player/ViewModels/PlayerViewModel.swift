@@ -14,6 +14,7 @@ final class PlayerViewModel {
     private let episode: Episode
     private let podcastImageURL: URL?
     private let audioService: AudioPlayerProtocol
+    private let favoritesRepository: FavoritesRepositoryProtocol
     
     private var cancellables = Set<AnyCancellable>()
     private var currentDuration: Double = 0.0
@@ -23,7 +24,7 @@ final class PlayerViewModel {
     @Published private(set) var artist: String
     @Published private(set) var coverURL: URL?
     @Published private(set) var isPlaying: Bool = false
-    
+    @Published private(set) var isFavorite: Bool = false
     @Published private(set) var progressValue: Float = 0.0
     @Published private(set) var currentTimeText: String = "00:00"
     @Published private(set) var durationText: String = "--:--"
@@ -31,17 +32,20 @@ final class PlayerViewModel {
     // MARK: - Initialization
     init(episode: Episode,
          podcastImageURL: URL?,
-         audioService: AudioPlayerProtocol = AudioService.shared) {
+         audioService: AudioPlayerProtocol = AudioService.shared,
+         favoritesRepository: FavoritesRepositoryProtocol) {
         
         self.episode = episode
         self.podcastImageURL = podcastImageURL
         self.audioService = audioService
+        self.favoritesRepository = favoritesRepository
         
         self.title = episode.trackName
-        self.artist = "Podcast"
+        self.artist = episode.collectionName ?? "Podcast"
         self.coverURL = podcastImageURL
         
         setupBindings()
+        checkFavoriteStatus()
     }
     
     // MARK: - User Actions
@@ -66,12 +70,31 @@ final class PlayerViewModel {
         audioService.seek(to: targetTime)
     }
     
+    func didTapFavorite() {
+        do {
+            if isFavorite {
+                try favoritesRepository.remove(episodeId: Int64(episode.trackId))
+                isFavorite = false
+            } else {
+                try favoritesRepository.save(episode)
+                isFavorite = true
+            }
+        } catch {
+            print("❌ Error toggling favorite: \(error)")
+        }
+    }
+    
     // MARK: - Private Setup
+    private func checkFavoriteStatus() {
+        isFavorite = favoritesRepository.isFavorite(episodeId: Int64(episode.trackId))
+    }
+    
     private func setupBindings() {
         bindPlayerState()
         bindProgress()
     }
     
+    // MARK: - Helper Handlers
     private func bindPlayerState() {
         audioService.playerState
             .receive(on: DispatchQueue.main)
@@ -90,7 +113,6 @@ final class PlayerViewModel {
             .store(in: &cancellables)
     }
     
-    // MARK: - Helper Handlers
     private func handlePlayerStateChange(_ state: AudioPlayerState) {
         switch state {
         case .playing(let url):
@@ -104,6 +126,7 @@ final class PlayerViewModel {
     
     private func handleProgressUpdate(currentTime: Double, duration: Double) {
         self.currentDuration = duration
+        
         self.currentTimeText = self.formatTime(currentTime)
         self.durationText = self.formatTime(duration)
         

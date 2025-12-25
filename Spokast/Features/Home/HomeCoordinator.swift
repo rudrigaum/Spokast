@@ -28,9 +28,12 @@ final class HomeCoordinator: Coordinator {
     
     // MARK: - Navigation to Player
     func presentPlayer(for episode: Episode, podcastImageURL: URL?) {
+        
+        let favoritesRepository = FavoritesRepository()
         let playerViewModel = PlayerViewModel(
             episode: episode,
-            podcastImageURL: podcastImageURL
+            podcastImageURL: podcastImageURL,
+            favoritesRepository: favoritesRepository
         )
         
         let playerViewController = PlayerViewController(viewModel: playerViewModel)
