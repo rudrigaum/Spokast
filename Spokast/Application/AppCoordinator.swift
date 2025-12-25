@@ -9,16 +9,41 @@ import Foundation
 import UIKit
 
 final class AppCoordinator: Coordinator {
-    var navigationController: UINavigationController
-    private var childCoordinators: [Coordinator] = []
-
-    init(navigationController: UINavigationController) {
-        self.navigationController = navigationController
+    
+    var window: UIWindow
+    
+    private let tabBarController = UITabBarController()
+    private var childCoordinators = [Coordinator]()
+    
+    init(window: UIWindow) {
+        self.window = window
     }
-
+    
     func start() {
-        let homeCoordinator = HomeCoordinator(navigationController: navigationController)
+        let homeNavController = UINavigationController()
+        homeNavController.tabBarItem = UITabBarItem(
+            title: "Discover",
+            image: UIImage(systemName: "waveform"),
+            selectedImage: UIImage(systemName: "waveform.circle.fill")
+        )
+        let homeCoordinator = HomeCoordinator(navigationController: homeNavController)
         childCoordinators.append(homeCoordinator)
         homeCoordinator.start()
+        
+        let favNavController = UINavigationController()
+        favNavController.tabBarItem = UITabBarItem(
+            title: "Favorites",
+            image: UIImage(systemName: "star"),
+            selectedImage: UIImage(systemName: "star.fill")
+        )
+        let favCoordinator = FavoritesCoordinator(navigationController: favNavController)
+        childCoordinators.append(favCoordinator)
+        favCoordinator.start()
+        
+        tabBarController.viewControllers = [homeNavController, favNavController]
+        tabBarController.tabBar.tintColor = .systemPurple
+        tabBarController.tabBar.backgroundColor = .systemBackground
+        window.rootViewController = tabBarController
+        window.makeKeyAndVisible()
     }
 }

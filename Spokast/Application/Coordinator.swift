@@ -10,12 +10,16 @@ import UIKit
 
 @MainActor
 protocol Coordinator: AnyObject {
-    var navigationController: UINavigationController { get set }
     func start()
+}
+
+@MainActor
+protocol NavigationCoordinator: Coordinator {
+    var navigationController: UINavigationController { get }
     func presentAlert(title: String, message: String)
 }
 
-extension Coordinator {
+extension NavigationCoordinator {
     func presentAlert(title: String, message: String) {
         let alertController = UIAlertController(title: title, message: message, preferredStyle: .alert)
         let okAction = UIAlertAction(title: "OK", style: .default)
