@@ -71,22 +71,17 @@ final class PlayerViewModel {
     }
     
     func didTapFavorite() {
-        do {
-            if isFavorite {
-                try favoritesRepository.remove(episodeId: Int64(episode.trackId))
-                isFavorite = false
-            } else {
-                try favoritesRepository.save(episode)
-                isFavorite = true
+            do {
+                let newState = try favoritesRepository.togglePodcastSubscription(for: episode)
+                isFavorite = newState
+            } catch {
+                print("❌ Error toggling subscription: \(error)")
             }
-        } catch {
-            print("❌ Error toggling favorite: \(error)")
         }
-    }
     
     // MARK: - Private Setup
     private func checkFavoriteStatus() {
-        isFavorite = favoritesRepository.isFavorite(episodeId: Int64(episode.trackId))
+        isFavorite = favoritesRepository.isPodcastFollowed(id: episode.collectionId)
     }
     
     private func setupBindings() {

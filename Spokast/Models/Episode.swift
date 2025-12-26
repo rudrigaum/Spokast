@@ -17,6 +17,8 @@ struct Episode: Decodable, Identifiable {
     let previewUrl: String?
     let artworkUrl160: String?
     let collectionName: String?
+    let collectionId: Int
+    let artworkUrl600: String?
     
     var durationInSeconds: Double {
         guard let millis = trackTimeMillis else { return 0.0 }
@@ -32,5 +34,7 @@ struct Episode: Decodable, Identifiable {
         case previewUrl
         case artworkUrl160
         case collectionName
+        case collectionId
+        case artworkUrl600
     }
 }
