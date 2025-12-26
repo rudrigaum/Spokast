@@ -11,36 +11,43 @@ import Kingfisher
 import Combine
 
 final class PodcastDetailViewController: UIViewController {
-
+    
     // MARK: - Properties
     private let viewModel: PodcastDetailViewModel
-    private var customView: PodcastDetailView?
+    
+    private var customView: PodcastDetailView? {
+        return self.view as? PodcastDetailView
+    }
+    
     private var cancellables = Set<AnyCancellable>()
     weak var coordinator: HomeCoordinator?
-
+    
     // MARK: - Initialization
     init(viewModel: PodcastDetailViewModel) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
     }
-
+    
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
+    
     // MARK: - Lifecycle
     override func loadView() {
-        self.customView = PodcastDetailView()
-        self.view = customView
+        self.view = PodcastDetailView()
     }
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        
         customView?.tableView.dataSource = self
         customView?.tableView.delegate = self
+        
         setupConfiguration()
+        setupActions()
         setupBindings()
+        
         viewModel.fetchEpisodes()
     }
     
@@ -62,20 +69,39 @@ final class PodcastDetailViewController: UIViewController {
         }
     }
     
+    // MARK: - Actions Setup
+    private func setupActions() {
+        customView?.subscribeButton.addTarget(self, action: #selector(didTapSubscribe), for: .touchUpInside)
+    }
+    
+    @objc private func didTapSubscribe() {
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+        
+        viewModel.didTapSubscribe()
+    }
+    
     // MARK: - Bindings
     private func setupBindings() {
+        bindEpisodes()
+        bindErrors()
+        bindPlayerState()
+        bindSubscriptionState()
+    }
+    
+    private func bindEpisodes() {
         viewModel.$episodes
             .receive(on: DispatchQueue.main)
             .sink { [weak self] episodes in
                 guard let self = self else { return }
-                
                 if !episodes.isEmpty {
-                    print("🚀 SUCESSO! Recebemos \(episodes.count) episódios.")
                     self.customView?.tableView.reloadData()
                 }
             }
             .store(in: &cancellables)
-        
+    }
+    
+    private func bindErrors() {
         viewModel.$errorMessage
             .compactMap { $0 }
             .receive(on: DispatchQueue.main)
@@ -84,12 +110,23 @@ final class PodcastDetailViewController: UIViewController {
                 print("❌ ERRO: \(message)")
             }
             .store(in: &cancellables)
-        
+    }
+    
+    private func bindPlayerState() {
         Publishers.CombineLatest(viewModel.$currentPlayingEpisodeId, viewModel.$isPlayerPaused)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] (playingId, isPaused) in
                 guard let self = self else { return }
                 self.updateVisibleCells(playingId: playingId, isPaused: isPaused)
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func bindSubscriptionState() {
+        viewModel.$isFavorite
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isFavorite in
+                self?.customView?.updateSubscribeButton(isSubscribed: isFavorite)
             }
             .store(in: &cancellables)
     }
@@ -142,7 +179,12 @@ extension PodcastDetailViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         viewModel.playEpisode(at: indexPath.row)
+        
         let episode = viewModel.episodes[indexPath.row]
         coordinator?.presentPlayer(for: episode, podcastImageURL: viewModel.coverImageURL)
+    }
+    
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        return 300
     }
 }

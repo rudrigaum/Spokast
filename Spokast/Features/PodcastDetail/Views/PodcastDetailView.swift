@@ -17,6 +17,7 @@ final class PodcastDetailView: UIView {
         tableView.backgroundColor = .systemBackground
         tableView.separatorStyle = .singleLine
         tableView.register(EpisodeCell.self, forCellReuseIdentifier: EpisodeCell.reuseIdentifier)
+        tableView.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 20, right: 0)
         return tableView
     }()
     
@@ -50,6 +51,29 @@ final class PodcastDetailView: UIView {
         return label
     }()
     
+    lazy var subscribeButton: UIButton = {
+        var config = UIButton.Configuration.filled()
+        config.cornerStyle = .capsule
+        config.baseBackgroundColor = .systemPurple
+        config.baseForegroundColor = .white
+        config.title = "SUBSCRIBE"
+        config.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16)
+        
+        let button = UIButton(configuration: config)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.heightAnchor.constraint(equalToConstant: 34).isActive = true
+        return button
+    }()
+    
+    private lazy var artistStackView: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [artistLabel, subscribeButton])
+        stack.axis = .horizontal
+        stack.spacing = 12
+        stack.alignment = .center
+        stack.distribution = .fill
+        return stack
+    }()
+    
     private let genreLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -60,7 +84,7 @@ final class PodcastDetailView: UIView {
     }()
 
     private lazy var headerStackView: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [imageView, titleLabel, artistLabel, genreLabel])
+        let stack = UIStackView(arrangedSubviews: [imageView, titleLabel, artistStackView, genreLabel])
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.axis = .vertical
         stack.spacing = 16
@@ -92,16 +116,39 @@ final class PodcastDetailView: UIView {
         genreLabel.text = viewModel.genre.uppercased()
         layoutTableHeaderView()
     }
+    
+    func updateSubscribeButton(isSubscribed: Bool) {
+        var config = subscribeButton.configuration
+        
+        if isSubscribed {
+            config?.baseBackgroundColor = .systemGray5
+            config?.baseForegroundColor = .secondaryLabel
+            config?.title = "SUBSCRIBED"
+            config?.image = UIImage(systemName: "checkmark")
+            config?.imagePadding = 6
+            config?.imagePlacement = .leading
+        } else {
+            config?.baseBackgroundColor = .systemPurple
+            config?.baseForegroundColor = .white
+            config?.title = "SUBSCRIBE"
+            config?.image = nil
+        }
+        
+        UIView.transition(with: subscribeButton, duration: 0.2, options: .transitionCrossDissolve) {
+            self.subscribeButton.configuration = config
+        }
+    }
 
     // MARK: - UI Setup
     private func setupUI() {
         backgroundColor = .systemBackground
         addSubview(tableView)
+        
         headerContainerView.addSubview(headerStackView)
         
         let stackLeading = headerStackView.leadingAnchor.constraint(equalTo: headerContainerView.leadingAnchor, constant: 24)
         let stackTrailing = headerStackView.trailingAnchor.constraint(equalTo: headerContainerView.trailingAnchor, constant: -24)
-      
+        
         stackLeading.priority = UILayoutPriority(999)
         stackTrailing.priority = UILayoutPriority(999)
         
@@ -111,13 +158,14 @@ final class PodcastDetailView: UIView {
             
             headerStackView.topAnchor.constraint(equalTo: headerContainerView.topAnchor, constant: 32),
             headerStackView.bottomAnchor.constraint(equalTo: headerContainerView.bottomAnchor, constant: -32),
+            headerStackView.centerXAnchor.constraint(equalTo: headerContainerView.centerXAnchor),
             
             stackLeading,
             stackTrailing
         ])
         
         tableView.tableHeaderView = headerContainerView
-        
+
         NSLayoutConstraint.activate([
             tableView.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor),
             tableView.leadingAnchor.constraint(equalTo: leadingAnchor),

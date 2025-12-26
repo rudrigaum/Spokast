@@ -14,24 +14,28 @@ final class PodcastDetailViewModel {
     private let podcast: Podcast
     private let service: APIService
     private let audioService: AudioPlayerProtocol
+    private let favoritesRepository: FavoritesRepositoryProtocol
     private var cancellables = Set<AnyCancellable>()
     
+    // MARK: - Outputs
     @Published private(set) var episodes: [Episode] = []
     @Published private(set) var errorMessage: String?
     @Published private(set) var currentPlayingEpisodeId: Int? = nil
     @Published private(set) var isPlayerPaused: Bool = false
+    @Published private(set) var isFavorite: Bool = false
     
     // MARK: - Initialization
-    init(podcast: Podcast,
-         service: APIService,
-         audioService: AudioPlayerProtocol = AudioService.shared) {
+    init(podcast: Podcast, service: APIService, audioService: AudioPlayerProtocol = AudioService.shared, favoritesRepository: FavoritesRepositoryProtocol) {
         self.podcast = podcast
         self.service = service
         self.audioService = audioService
+        self.favoritesRepository = favoritesRepository
         
         setupAudioObserver()
+        checkFavoriteStatus()
     }
     
+    // MARK: - Computed Properties
     var title: String { return podcast.collectionName }
     var artist: String { return podcast.artistName }
     var genre: String { return podcast.primaryGenreName ?? "Podcast" }
@@ -62,6 +66,23 @@ final class PodcastDetailViewModel {
         }
     }
     
+    // MARK: - Subscription Logic
+    func checkFavoriteStatus() {
+        guard let id = podcast.trackId else { return }
+        isFavorite = favoritesRepository.isPodcastFollowed(id: id)
+    }
+    
+    func didTapSubscribe() {
+        let podcastAsEpisode = makeRepresentativeEpisode()
+        
+        do {
+            let newState = try favoritesRepository.togglePodcastSubscription(for: podcastAsEpisode)
+            isFavorite = newState
+        } catch {
+            print("❌ Error toggling subscription: \(error)")
+        }
+    }
+    
     // MARK: - Audio Methods
     func playEpisode(at index: Int) {
         guard episodes.indices.contains(index) else { return }
@@ -74,7 +95,7 @@ final class PodcastDetailViewModel {
         audioService.toggle(url: url)
     }
     
-    // MARK: - Private Setup
+    // MARK: - Private Setup & Helpers
     private func setupAudioObserver() {
         audioService.playerState
             .receive(on: DispatchQueue.main)
@@ -103,5 +124,20 @@ final class PodcastDetailViewModel {
                 self.currentPlayingEpisodeId = episode.trackId
             }
         }
+    }
+    
+    private func makeRepresentativeEpisode() -> Episode {
+        return Episode(
+            trackId: 0,
+            trackName: "Podcast Info",
+            description: nil,
+            releaseDate: Date(),
+            trackTimeMillis: 0,
+            previewUrl: nil,
+            artworkUrl160: podcast.artworkUrl100,
+            collectionName: podcast.collectionName,
+            collectionId: podcast.trackId ?? 0,
+            artworkUrl600: podcast.artworkUrl600
+        )
     }
 }
