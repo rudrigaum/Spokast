@@ -16,7 +16,27 @@ final class FavoritesCoordinator: Coordinator {
     }
     
     func start() {
-        let viewController = FavoritesViewController()
+        let repository = FavoritesRepository()
+        let viewModel = FavoritesViewModel(repository: repository)
+        let viewController = FavoritesViewController(viewModel: viewModel)
+        viewController.coordinator = self
         navigationController.pushViewController(viewController, animated: false)
     }
+}
+
+extension FavoritesCoordinator: PodcastSelectionDelegate {
+    func didSelectPodcast(_ podcast: Podcast) {
+            let service = APIService()
+            let favoritesRepository = FavoritesRepository()
+            
+            let detailViewModel = PodcastDetailViewModel(
+                podcast: podcast,
+                service: service,
+                favoritesRepository: favoritesRepository
+            )
+            
+            let detailVC = PodcastDetailViewController(viewModel: detailViewModel)
+            
+            navigationController.pushViewController(detailVC, animated: true)
+        }
 }
