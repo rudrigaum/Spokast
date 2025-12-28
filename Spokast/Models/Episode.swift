@@ -16,6 +16,14 @@ struct Episode: Decodable, Identifiable {
     let trackTimeMillis: Int?
     let previewUrl: String?
     let artworkUrl160: String?
+    let collectionName: String?
+    let collectionId: Int
+    let artworkUrl600: String?
+    
+    var durationInSeconds: Double {
+        guard let millis = trackTimeMillis else { return 0.0 }
+        return Double(millis) / 1000.0
+    }
     
     enum CodingKeys: String, CodingKey {
         case trackId
@@ -25,5 +33,8 @@ struct Episode: Decodable, Identifiable {
         case trackTimeMillis
         case previewUrl
         case artworkUrl160
+        case collectionName
+        case collectionId
+        case artworkUrl600
     }
 }

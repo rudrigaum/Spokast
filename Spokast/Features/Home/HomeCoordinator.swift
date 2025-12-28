@@ -28,9 +28,12 @@ final class HomeCoordinator: Coordinator {
     
     // MARK: - Navigation to Player
     func presentPlayer(for episode: Episode, podcastImageURL: URL?) {
+        
+        let favoritesRepository = FavoritesRepository()
         let playerViewModel = PlayerViewModel(
             episode: episode,
-            podcastImageURL: podcastImageURL
+            podcastImageURL: podcastImageURL,
+            favoritesRepository: favoritesRepository
         )
         
         let playerViewController = PlayerViewController(viewModel: playerViewModel)
@@ -49,7 +52,8 @@ final class HomeCoordinator: Coordinator {
 extension HomeCoordinator: HomeViewControllerDelegate {
     func didSelectPodcast(_ podcast: Podcast) {
         let service = APIService()
-        let detailViewModel = PodcastDetailViewModel(podcast: podcast, service: service)
+        let favoritesRepository = FavoritesRepository()
+        let detailViewModel = PodcastDetailViewModel(podcast: podcast, service: service, favoritesRepository: favoritesRepository)
         let detailViewController = PodcastDetailViewController(viewModel: detailViewModel)
         detailViewController.coordinator = self
         navigationController.pushViewController(detailViewController, animated: true)
