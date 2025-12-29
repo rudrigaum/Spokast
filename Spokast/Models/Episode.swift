@@ -15,6 +15,7 @@ struct Episode: Decodable, Identifiable {
     let releaseDate: Date
     let trackTimeMillis: Int?
     let previewUrl: String?
+    let episodeUrl: String?
     let artworkUrl160: String?
     let collectionName: String?
     let collectionId: Int
@@ -25,6 +26,13 @@ struct Episode: Decodable, Identifiable {
         return Double(millis) / 1000.0
     }
     
+    var streamUrl: URL? {
+        if let urlString = episodeUrl ?? previewUrl {
+            return URL(string: urlString)
+        }
+        return nil
+    }
+    
     enum CodingKeys: String, CodingKey {
         case trackId
         case trackName
@@ -32,6 +40,7 @@ struct Episode: Decodable, Identifiable {
         case releaseDate
         case trackTimeMillis
         case previewUrl
+        case episodeUrl
         case artworkUrl160
         case collectionName
         case collectionId

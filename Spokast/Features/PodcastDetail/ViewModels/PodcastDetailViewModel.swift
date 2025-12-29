@@ -134,6 +134,7 @@ final class PodcastDetailViewModel {
             releaseDate: Date(),
             trackTimeMillis: 0,
             previewUrl: nil,
+            episodeUrl: nil,
             artworkUrl160: podcast.artworkUrl100,
             collectionName: podcast.collectionName,
             collectionId: podcast.trackId ?? 0,
