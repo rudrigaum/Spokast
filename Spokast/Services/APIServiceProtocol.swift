@@ -9,10 +9,12 @@ import Foundation
 
 enum APIError: Error {
     case invalidURL
+    case invalidResponse
     case requestFailed(Error)
     case decodingError(Error)
 }
 
 protocol APIServiceProtocol {
-    func fetchPodcasts(searchTerm: String) async throws -> [Podcast]
+    func fetchPodcasts(searchTerm: String, limit: Int) async throws -> [Podcast]
+    func fetchEpisodes(for podcastId: Int) async throws -> [Episode]
 }

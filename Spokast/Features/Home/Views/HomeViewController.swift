@@ -4,10 +4,9 @@
 //  Created by Rodrigo Cerqueira Reis on 26/09/25.
 //
 
-import Foundation
 import UIKit
+import Combine
 
-// MARK: - HomeViewControllerDelegate
 protocol HomeViewControllerDelegate: AnyObject {
     func didSelectPodcast(_ podcast: Podcast)
 }
@@ -16,14 +15,17 @@ final class HomeViewController: UIViewController {
 
     // MARK: - Properties
     private let viewModel: HomeViewModel
-    private var homeView: HomeView?
+    private var cancellables = Set<AnyCancellable>()
     weak var delegate: HomeViewControllerDelegate?
+
+    private var customView: HomeView {
+        return self.view as! HomeView
+    }
 
     // MARK: - Initialization
     init(viewModel: HomeViewModel) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
-        self.viewModel.delegate = self
     }
 
     @available(*, unavailable)
@@ -33,69 +35,115 @@ final class HomeViewController: UIViewController {
 
     // MARK: - View Lifecycle
     override func loadView() {
-        self.homeView = HomeView()
-        self.view = homeView
+        self.view = HomeView()
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupView()
-        
-        homeView?.podcastsTableView.dataSource = self
-        homeView?.podcastsTableView.delegate = self
-        
-        homeView?.podcastsTableView.register(PodcastCell.self, forCellReuseIdentifier: PodcastCell.reuseIdentifier)
-        viewModel.fetchPodcasts()
+        setupNavigation()
+        setupCollectionView()
+        setupBindings()
+        viewModel.fetchHomeData()
     }
 
-    private func setupView() {
-        title = "Spokast"
+    // MARK: - Setup
+    private func setupNavigation() {
+        title = "Discover"
+        navigationController?.navigationBar.prefersLargeTitles = true
+    }
+    
+    private func setupCollectionView() {
+        customView.collectionView.dataSource = self
+        customView.collectionView.delegate = self
+    }
+    
+    // MARK: - Bindings
+    private func setupBindings() {
+        viewModel.$state
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] state in
+                self?.handleStateChange(state)
+            }
+            .store(in: &cancellables)
+        
+        viewModel.$sections
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.customView.collectionView.reloadData()
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func handleStateChange(_ state: HomeViewState) {
+        switch state {
+        case .loading:
+            customView.showLoading(true)
+        case .success:
+            customView.showLoading(false)
+        case .error(let message):
+            customView.showLoading(false)
+            showErrorAlert(message: message)
+        }
+    }
+    
+    private func showErrorAlert(message: String) {
+        let alert = UIAlertController(title: "Oops!", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Retry", style: .default, handler: { [weak self] _ in
+            self?.viewModel.fetchHomeData()
+        }))
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        present(alert, animated: true)
     }
 }
 
-// MARK: - HomeViewModelDelegate
-extension HomeViewController: HomeViewModelDelegate {
-    func didFetchPodcastsSuccessfully() {
-        homeView?.podcastsTableView.reloadData()
-        print("Successfully fetched podcasts!")
-    }
-
-    func didFailToFetchPodcasts(with error: String) {
-        print("Failed to fetch podcasts with error: \(error)")
-    }
-}
-
-// MARK: - UITableViewDataSource
-extension HomeViewController: UITableViewDataSource {
+// MARK: - UICollectionViewDataSource
+extension HomeViewController: UICollectionViewDataSource {
     
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return viewModel.podcasts.count
+    func numberOfSections(in collectionView: UICollectionView) -> Int {
+        return viewModel.sections.count
     }
     
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: PodcastCell.reuseIdentifier, for: indexPath) as? PodcastCell else {
-            fatalError("Could not dequeue cell with identifier: \(PodcastCell.reuseIdentifier)")
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return viewModel.sections[section].podcasts.count
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: FeaturedPodcastCell.reuseIdentifier, for: indexPath) as? FeaturedPodcastCell else {
+            fatalError("Could not dequeue FeaturedPodcastCell")
         }
         
-        let podcast = viewModel.podcasts[indexPath.row]
+        let section = viewModel.sections[indexPath.section]
+        let podcast = section.podcasts[indexPath.item]
         
-        cell.configure(
-            title: podcast.collectionName,
-            publisher: podcast.artistName,
-            imageUrlString: podcast.artworkUrl100
-        )
+        cell.configure(with: podcast)
         
         return cell
     }
+    
+    func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
+        
+        if kind == UICollectionView.elementKindSectionHeader {
+            guard let header = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: HomeSectionHeader.reuseIdentifier, for: indexPath) as? HomeSectionHeader else {
+                return UICollectionReusableView()
+            }
+            
+            let sectionTitle = viewModel.sections[indexPath.section].title
+            header.configure(with: sectionTitle)
+            return header
+        }
+        
+        return UICollectionReusableView()
+    }
 }
 
-// MARK: - UITableViewDelegate
-extension HomeViewController: UITableViewDelegate {
+// MARK: - UICollectionViewDelegate
+extension HomeViewController: UICollectionViewDelegate {
     
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
-        
-        let selectedPodcast = viewModel.podcasts[indexPath.row]
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        collectionView.deselectItem(at: indexPath, animated: true)
+        let section = viewModel.sections[indexPath.section]
+        let selectedPodcast = section.podcasts[indexPath.item]
         delegate?.didSelectPodcast(selectedPodcast)
     }
 }
