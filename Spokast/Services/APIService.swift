@@ -7,22 +7,22 @@
 
 import Foundation
 
-enum APIServiceError: Error {
-    case invalidURL
-    case invalidResponse
-    case decodingError
-}
-
 final class APIService: APIServiceProtocol {
 
-    func fetchPodcasts(searchTerm: String) async throws -> [Podcast] {
-        guard let url = buildURL(for: searchTerm) else {
+    func fetchPodcasts(searchTerm: String, limit: Int = 20) async throws -> [Podcast] {
+        guard let url = buildURL(for: searchTerm, limit: limit) else {
             throw APIError.invalidURL
         }
 
         let data: Data
         do {
-            let (urlData, _) = try await URLSession.shared.data(from: url)
+            let (urlData, response) = try await URLSession.shared.data(from: url)
+            
+            guard let httpResponse = response as? HTTPURLResponse,
+                  (200...299).contains(httpResponse.statusCode) else {
+                throw APIError.invalidResponse
+            }
+            
             data = urlData
         } catch {
             throw APIError.requestFailed(error)
@@ -37,7 +37,7 @@ final class APIService: APIServiceProtocol {
         }
     }
 
-    private func buildURL(for searchTerm: String) -> URL? {
+    private func buildURL(for searchTerm: String, limit: Int) -> URL? {
         var components = URLComponents()
         components.scheme = "https"
         components.host = "itunes.apple.com"
@@ -47,13 +47,14 @@ final class APIService: APIServiceProtocol {
             URLQueryItem(name: "term", value: searchTerm),
             URLQueryItem(name: "media", value: "podcast"),
             URLQueryItem(name: "entity", value: "podcast"),
-            URLQueryItem(name: "limit", value: "20")
+            URLQueryItem(name: "limit", value: "\(limit)")
         ]
 
         return components.url
     }
 }
 
+// MARK: - Internal Models
 private struct EpisodeLookupResult: Decodable {
     let resultCount: Int
     let results: [Episode]
@@ -71,27 +72,29 @@ extension APIService {
         ]
         
         guard let url = components?.url else {
-            throw APIServiceError.invalidURL
+            throw APIError.invalidURL
         }
-        
-        let (data, response) = try await URLSession.shared.data(from: url)
-        
-        guard let httpResponse = response as? HTTPURLResponse,
-              (200...299).contains(httpResponse.statusCode) else {
-            throw APIServiceError.invalidResponse
-        }
-        
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
         
         do {
+            let (data, response) = try await URLSession.shared.data(from: url)
+            
+            guard let httpResponse = response as? HTTPURLResponse,
+                  (200...299).contains(httpResponse.statusCode) else {
+                throw APIError.invalidResponse
+            }
+            
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+            
             let lookupResult = try decoder.decode(EpisodeLookupResult.self, from: data)
             let episodes = Array(lookupResult.results.dropFirst())
             return episodes
             
+        } catch let error as APIError {
+            throw error
         } catch {
             print("Decoding error: \(error)")
-            throw APIServiceError.decodingError
+            throw APIError.decodingError(error)
         }
     }
 }
