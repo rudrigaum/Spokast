@@ -40,7 +40,12 @@ final class AppCoordinator: Coordinator {
         childCoordinators.append(favCoordinator)
         favCoordinator.start()
         
-        tabBarController.viewControllers = [homeNavController, favNavController]
+        let searchNav = UINavigationController()
+        let searchCoordinator = SearchCoordinator(navigationController: searchNav)
+        childCoordinators.append(searchCoordinator)
+        searchCoordinator.start()
+        
+        tabBarController.viewControllers = [homeNavController, favNavController, searchNav]
         tabBarController.tabBar.tintColor = .systemPurple
         tabBarController.tabBar.backgroundColor = .systemBackground
         window.rootViewController = tabBarController
