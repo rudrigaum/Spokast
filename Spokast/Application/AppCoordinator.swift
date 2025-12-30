@@ -10,45 +10,73 @@ import UIKit
 
 final class AppCoordinator: Coordinator {
     
-    var window: UIWindow
+    // MARK: - Properties
+    var navigationController: UINavigationController
+    var childCoordinators: [Coordinator] = []
+    let window: UIWindow
     
-    private let tabBarController = UITabBarController()
-    private var childCoordinators = [Coordinator]()
-    
+    // MARK: - Init
     init(window: UIWindow) {
         self.window = window
+        self.navigationController = UINavigationController()
     }
     
+    // MARK: - Start
     func start() {
-        let homeNavController = UINavigationController()
-        homeNavController.tabBarItem = UITabBarItem(
+        let homeNav = makeHomeFlow()
+        let searchNav = makeSearchFlow()
+        let favNav = makeFavoritesFlow()
+        
+        let viewControllers = [homeNav, searchNav, favNav]
+        let mainTabBar = MainTabBarController(viewControllers: viewControllers)
+        
+        window.rootViewController = mainTabBar
+        window.makeKeyAndVisible()
+    }
+    
+    // MARK: - Private Factory Methods
+    private func makeHomeFlow() -> UINavigationController {
+        let navController = UINavigationController()
+        navController.tabBarItem = UITabBarItem(
             title: "Discover",
             image: UIImage(systemName: "waveform"),
             selectedImage: UIImage(systemName: "waveform.circle.fill")
         )
-        let homeCoordinator = HomeCoordinator(navigationController: homeNavController)
-        childCoordinators.append(homeCoordinator)
-        homeCoordinator.start()
         
-        let favNavController = UINavigationController()
-        favNavController.tabBarItem = UITabBarItem(
+        let coordinator = HomeCoordinator(navigationController: navController)
+        childCoordinators.append(coordinator)
+        coordinator.start()
+        
+        return navController
+    }
+    
+    private func makeSearchFlow() -> UINavigationController {
+        let navController = UINavigationController()
+        navController.tabBarItem = UITabBarItem(
+            title: "Search",
+            image: UIImage(systemName: "magnifyingglass"),
+            selectedImage: UIImage(systemName: "magnifyingglass.circle.fill")
+        )
+        
+        let coordinator = SearchCoordinator(navigationController: navController)
+        childCoordinators.append(coordinator)
+        coordinator.start()
+        
+        return navController
+    }
+    
+    private func makeFavoritesFlow() -> UINavigationController {
+        let navController = UINavigationController()
+        navController.tabBarItem = UITabBarItem(
             title: "Favorites",
             image: UIImage(systemName: "star"),
             selectedImage: UIImage(systemName: "star.fill")
         )
-        let favCoordinator = FavoritesCoordinator(navigationController: favNavController)
-        childCoordinators.append(favCoordinator)
-        favCoordinator.start()
         
-        let searchNav = UINavigationController()
-        let searchCoordinator = SearchCoordinator(navigationController: searchNav)
-        childCoordinators.append(searchCoordinator)
-        searchCoordinator.start()
+        let coordinator = FavoritesCoordinator(navigationController: navController)
+        childCoordinators.append(coordinator)
+        coordinator.start()
         
-        tabBarController.viewControllers = [homeNavController, favNavController, searchNav]
-        tabBarController.tabBar.tintColor = .systemPurple
-        tabBarController.tabBar.backgroundColor = .systemBackground
-        window.rootViewController = tabBarController
-        window.makeKeyAndVisible()
+        return navController
     }
 }

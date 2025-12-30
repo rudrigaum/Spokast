@@ -12,12 +12,16 @@ final class EpisodeCell: UITableViewCell {
 
     static let reuseIdentifier = "EpisodeCell"
     
+    // MARK: - Actions
+    var onPlayTap: (() -> Void)?
+    
     // MARK: - UI Components
-    private let playIconContainer: UIView = {
+    private lazy var playIconContainer: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.backgroundColor = .systemPurple.withAlphaComponent(0.1)
         view.layer.cornerRadius = 20
+        view.isUserInteractionEnabled = true
         return view
     }()
     
@@ -56,11 +60,12 @@ final class EpisodeCell: UITableViewCell {
         stack.alignment = .leading
         return stack
     }()
-
+    
     // MARK: - Initialization
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         setupUI()
+        setupGestures()
     }
     
     @available(*, unavailable)
@@ -69,7 +74,7 @@ final class EpisodeCell: UITableViewCell {
     }
     
     // MARK: - Configuration
-    func configure(with episode: Episode) {
+    func configure(with episode: Episode, isPlaying: Bool) {
         titleLabel.text = episode.trackName
         
         let dateFormatter = DateFormatter()
@@ -78,8 +83,7 @@ final class EpisodeCell: UITableViewCell {
         let durationText = formatDuration(millis: episode.trackTimeMillis)
         
         descriptionLabel.text = "\(dateString) • \(durationText)"
-        playImageView.image = UIImage(systemName: "play.fill")
-        playIconContainer.backgroundColor = .systemPurple.withAlphaComponent(0.1)
+        updatePlaybackState(isPlaying: isPlaying)
     }
     
     // MARK: - Helpers
@@ -106,11 +110,29 @@ final class EpisodeCell: UITableViewCell {
         
         playIconContainer.backgroundColor = isPlaying ? .systemPurple.withAlphaComponent(0.3) : .systemPurple.withAlphaComponent(0.1)
     }
-
+    
+    // MARK: - Gestures
+    private func setupGestures() {
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(didTapPlayContainer))
+        playIconContainer.addGestureRecognizer(tapGesture)
+    }
+    
+    @objc private func didTapPlayContainer() {
+        UIView.animate(withDuration: 0.1, animations: {
+            self.playIconContainer.transform = CGAffineTransform(scaleX: 0.9, y: 0.9)
+        }) { _ in
+            UIView.animate(withDuration: 0.1) {
+                self.playIconContainer.transform = .identity
+            }
+        }
+        onPlayTap?()
+    }
+    
     // MARK: - UI Setup
     private func setupUI() {
         backgroundColor = .systemBackground
         selectionStyle = .default
+        
         contentView.addSubview(playIconContainer)
         playIconContainer.addSubview(playImageView)
         contentView.addSubview(textStackView)

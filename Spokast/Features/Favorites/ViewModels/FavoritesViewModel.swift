@@ -57,6 +57,7 @@ final class FavoritesViewModel {
             releaseDate: Date(),
             trackTimeMillis: 0,
             previewUrl: nil,
+            episodeUrl: nil,
             artworkUrl160: nil,
             collectionName: podcastToRemove.title,
             collectionId: Int(podcastToRemove.id),

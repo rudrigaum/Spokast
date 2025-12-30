@@ -13,7 +13,7 @@ final class PodcastDetailViewModel {
     // MARK: - Properties
     private let podcast: Podcast
     private let service: APIService
-    private let audioService: AudioPlayerProtocol
+    private let audioPlayerService: AudioPlayerServiceProtocol
     private let favoritesRepository: FavoritesRepositoryProtocol
     private var cancellables = Set<AnyCancellable>()
     
@@ -23,13 +23,18 @@ final class PodcastDetailViewModel {
     @Published private(set) var currentPlayingEpisodeId: Int? = nil
     @Published private(set) var isPlayerPaused: Bool = false
     @Published private(set) var isFavorite: Bool = false
+    @Published var isPlaying: Bool = false
+    @Published var currentPlayingID: Int?
     
     // MARK: - Initialization
-    init(podcast: Podcast, service: APIService, audioService: AudioPlayerProtocol = AudioService.shared, favoritesRepository: FavoritesRepositoryProtocol) {
+    init(podcast: Podcast,
+         service: APIService,
+         favoritesRepository: FavoritesRepositoryProtocol,
+         audioPlayerService: AudioPlayerServiceProtocol = AudioPlayerService.shared) {
         self.podcast = podcast
         self.service = service
-        self.audioService = audioService
         self.favoritesRepository = favoritesRepository
+        self.audioPlayerService = audioPlayerService
         
         setupAudioObserver()
         checkFavoriteStatus()
@@ -87,43 +92,25 @@ final class PodcastDetailViewModel {
     func playEpisode(at index: Int) {
         guard episodes.indices.contains(index) else { return }
         let episode = episodes[index]
-        
-        guard let urlString = episode.previewUrl, let url = URL(string: urlString) else {
-            self.errorMessage = "Audio preview not available."
-            return
-        }
-        audioService.toggle(url: url)
+        audioPlayerService.play(episode: episode, from: podcast)
+    }
+    
+    func didTapPlay(episode: Episode) {
+        audioPlayerService.play(episode: episode, from: podcast)
     }
     
     // MARK: - Private Setup & Helpers
     private func setupAudioObserver() {
-        audioService.playerState
+        audioPlayerService.playerStatePublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] state in
-                guard let self = self else { return }
-                self.handleAudioStateChange(state)
-            }
+            .assign(to: \.isPlaying, on: self)
             .store(in: &cancellables)
-    }
-    
-    private func handleAudioStateChange(_ state: AudioPlayerState) {
-        switch state {
-        case .stopped:
-            self.currentPlayingEpisodeId = nil
-            self.isPlayerPaused = false
-            
-        case .playing(let url):
-            self.isPlayerPaused = false
-            if let episode = self.episodes.first(where: { $0.previewUrl == url.absoluteString }) {
-                self.currentPlayingEpisodeId = episode.trackId
-            }
-            
-        case .paused(let url):
-            self.isPlayerPaused = true
-            if let episode = self.episodes.first(where: { $0.previewUrl == url.absoluteString }) {
-                self.currentPlayingEpisodeId = episode.trackId
-            }
-        }
+        
+        audioPlayerService.currentEpisodePublisher
+            .receive(on: DispatchQueue.main)
+            .map { $0?.id }
+            .assign(to: \.currentPlayingID, on: self)
+            .store(in: &cancellables)
     }
     
     private func makeRepresentativeEpisode() -> Episode {
@@ -134,6 +121,7 @@ final class PodcastDetailViewModel {
             releaseDate: Date(),
             trackTimeMillis: 0,
             previewUrl: nil,
+            episodeUrl: nil,
             artworkUrl160: podcast.artworkUrl100,
             collectionName: podcast.collectionName,
             collectionId: podcast.trackId ?? 0,

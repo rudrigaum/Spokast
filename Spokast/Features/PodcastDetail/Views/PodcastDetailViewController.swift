@@ -113,11 +113,12 @@ final class PodcastDetailViewController: UIViewController {
     }
     
     private func bindPlayerState() {
-        Publishers.CombineLatest(viewModel.$currentPlayingEpisodeId, viewModel.$isPlayerPaused)
+        Publishers.CombineLatest(viewModel.$currentPlayingID, viewModel.$isPlaying)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] (playingId, isPaused) in
+            .sink { [weak self] (playingId, isPlaying) in
                 guard let self = self else { return }
-                self.updateVisibleCells(playingId: playingId, isPaused: isPaused)
+                
+                self.customView?.tableView.reloadData()
             }
             .store(in: &cancellables)
     }
@@ -155,20 +156,17 @@ extension PodcastDetailViewController: UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: EpisodeCell.reuseIdentifier, for: indexPath) as? EpisodeCell else {
-            fatalError("Could not dequeue EpisodeCell.")
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: "EpisodeCell", for: indexPath) as? EpisodeCell else {
+            return UITableViewCell()
         }
         
         let episode = viewModel.episodes[indexPath.row]
-        cell.configure(with: episode)
-        
-        if let playingId = viewModel.currentPlayingEpisodeId, playingId == episode.trackId {
-            let isPlaying = !viewModel.isPlayerPaused
-            cell.updatePlaybackState(isPlaying: isPlaying)
-        } else {
-            cell.updatePlaybackState(isPlaying: false)
+        let isPlayingThisEpisode = viewModel.isPlaying && (viewModel.currentPlayingID == episode.id)
+
+        cell.configure(with: episode, isPlaying: isPlayingThisEpisode)
+        cell.onPlayTap = { [weak self] in
+            self?.viewModel.playEpisode(at: indexPath.row)
         }
-        
         return cell
     }
 }
@@ -181,6 +179,7 @@ extension PodcastDetailViewController: UITableViewDelegate {
         viewModel.playEpisode(at: indexPath.row)
         
         let episode = viewModel.episodes[indexPath.row]
+        viewModel.didTapPlay(episode: episode)
         coordinator?.presentPlayer(for: episode, podcastImageURL: viewModel.coverImageURL)
     }
     
