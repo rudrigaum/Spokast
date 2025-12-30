@@ -1,4 +1,4 @@
-# [App Name] 🎙️
+# Spokast 🎙️
 
 ![Swift](https://img.shields.io/badge/Swift-5.0-orange.svg)
 ![Platform](https://img.shields.io/badge/Platform-iOS%2015.0+-lightgrey.svg)
@@ -11,7 +11,7 @@
 
 ## 📱 Overview
 
-**[App Name]** is a native iOS application designed to provide a seamless podcast listening experience. It features a robust **Global Mini Player**, real-time playback synchronization, and a highly responsive UI built entirely programmatically (View Code).
+**Spokast** is a native iOS application designed to provide a seamless podcast listening experience. It features a robust **Global Mini Player**, real-time playback synchronization, and a highly responsive UI built entirely programmatically (View Code).
 
 The goal of this project is to demonstrate advanced iOS development skills, including reactive state management with **Combine**, SOLID principles, and a modular architecture.
 
