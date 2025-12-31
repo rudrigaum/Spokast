@@ -78,10 +78,8 @@ final class PodcastDetailViewModel {
     }
     
     func didTapSubscribe() {
-        let podcastAsEpisode = makeRepresentativeEpisode()
-        
         do {
-            let newState = try favoritesRepository.togglePodcastSubscription(for: podcastAsEpisode)
+            let newState = try favoritesRepository.togglePodcastSubscription(for: self.podcast)
             isFavorite = newState
         } catch {
             print("❌ Error toggling subscription: \(error)")
@@ -111,21 +109,5 @@ final class PodcastDetailViewModel {
             .map { $0?.id }
             .assign(to: \.currentPlayingID, on: self)
             .store(in: &cancellables)
-    }
-    
-    private func makeRepresentativeEpisode() -> Episode {
-        return Episode(
-            trackId: 0,
-            trackName: "Podcast Info",
-            description: nil,
-            releaseDate: Date(),
-            trackTimeMillis: 0,
-            previewUrl: nil,
-            episodeUrl: nil,
-            artworkUrl160: podcast.artworkUrl100,
-            collectionName: podcast.collectionName,
-            collectionId: podcast.trackId ?? 0,
-            artworkUrl600: podcast.artworkUrl600
-        )
     }
 }

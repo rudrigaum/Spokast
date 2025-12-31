@@ -71,13 +71,13 @@ final class PlayerViewModel {
     }
     
     func didTapFavorite() {
-            do {
-                let newState = try favoritesRepository.togglePodcastSubscription(for: episode)
-                isFavorite = newState
-            } catch {
-                print("❌ Error toggling subscription: \(error)")
-            }
+        do {
+            let newState = try favoritesRepository.togglePodcastSubscription(for: episode.asPodcast)
+            isFavorite = newState
+        } catch {
+            print("❌ Error toggling subscription: \(error)")
         }
+    }
     
     // MARK: - Private Setup
     private func checkFavoriteStatus() {

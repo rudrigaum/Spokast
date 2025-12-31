@@ -50,23 +50,8 @@ final class FavoritesViewModel {
         guard podcasts.indices.contains(index) else { return }
         let podcastToRemove = podcasts[index]
         
-        let dummyEpisode = Episode(
-            trackId: 0,
-            trackName: "",
-            description: nil,
-            releaseDate: Date(),
-            trackTimeMillis: 0,
-            previewUrl: nil,
-            episodeUrl: nil,
-            artworkUrl160: nil,
-            collectionName: podcastToRemove.title,
-            collectionId: Int(podcastToRemove.id),
-            artworkUrl600: podcastToRemove.coverUrl
-        )
-        
         do {
-            _ = try repository.togglePodcastSubscription(for: dummyEpisode)
-
+            try repository.removePodcast(id: podcastToRemove.id)
             loadFavorites()
         } catch {
             print("❌ Error removing favorite: \(error)")

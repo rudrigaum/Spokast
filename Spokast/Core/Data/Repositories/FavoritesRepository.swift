@@ -10,12 +10,13 @@ import CoreData
 
 // MARK: - Protocol
 protocol FavoritesRepositoryProtocol {
-    func togglePodcastSubscription(for episode: Episode) throws -> Bool
+    func togglePodcastSubscription(for podcast: Podcast) throws -> Bool
     func isPodcastFollowed(id: Int) -> Bool
     func fetchFollowedPodcasts() -> [FavoritePodcast]
     func toggleEpisodeLike(for episode: Episode) throws -> Bool
     func isEpisodeLiked(id: Int) -> Bool
     func fetchLikedEpisodes() -> [FavoriteEpisode]
+    func removePodcast(id: Int64) throws
 }
 
 // MARK: - Implementation
@@ -24,14 +25,14 @@ final class FavoritesRepository: FavoritesRepositoryProtocol {
     private let context = CoreDataService.shared.viewContext
     
     // MARK: - PODCASTS
-    func togglePodcastSubscription(for episode: Episode) throws -> Bool {
-        let podcastId = episode.collectionId
+    func togglePodcastSubscription(for podcast: Podcast) throws -> Bool {
+        let podcastId = podcast.trackId ?? 0
         
         if isPodcastFollowed(id: podcastId) {
             try removePodcast(id: Int64(podcastId))
             return false
         } else {
-            try savePodcast(from: episode)
+            try savePodcast(from: podcast)
             return true
         }
     }
@@ -55,17 +56,19 @@ final class FavoritesRepository: FavoritesRepositoryProtocol {
         }
     }
     
-    private func savePodcast(from episode: Episode) throws {
+    private func savePodcast(from podcastModel: Podcast) throws {
         let podcast = FavoritePodcast(context: context)
-        podcast.id = Int64(episode.collectionId)
-        podcast.title = episode.collectionName ?? "Unknown Podcast"
-        podcast.coverUrl = episode.artworkUrl600 ?? episode.artworkUrl160
-        podcast.author = "Artist"
+        podcast.id = Int64(podcastModel.trackId ?? 0)
+        podcast.title = podcastModel.collectionName
+        
+        podcast.coverUrl = podcastModel.artworkUrl600 ?? podcastModel.artworkUrl100
+        podcast.author = podcastModel.artistName
         podcast.createdAt = Date()
+        
         try context.save()
     }
     
-    private func removePodcast(id: Int64) throws {
+    func removePodcast(id: Int64) throws {
         let request: NSFetchRequest<FavoritePodcast> = FavoritePodcast.fetchRequest()
         request.predicate = NSPredicate(format: "id == %d", id)
         
