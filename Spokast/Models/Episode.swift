@@ -20,6 +20,7 @@ struct Episode: Decodable, Identifiable {
     let collectionName: String?
     let collectionId: Int
     let artworkUrl600: String?
+    let artistName: String?
     
     var durationInSeconds: Double {
         guard let millis = trackTimeMillis else { return 0.0 }
@@ -45,5 +46,20 @@ struct Episode: Decodable, Identifiable {
         case collectionName
         case collectionId
         case artworkUrl600
+        case artistName
+    }
+}
+
+extension Episode {
+    var asPodcast: Podcast {
+        return Podcast(
+            trackId: collectionId, 
+            artistName: artistName ?? "Unknown Artist",
+            collectionName: collectionName ?? "Unknown Podcast",
+            artworkUrl100: artworkUrl160 ?? "",
+            feedUrl: nil,
+            artworkUrl600: artworkUrl600,
+            primaryGenreName: nil
+        )
     }
 }
