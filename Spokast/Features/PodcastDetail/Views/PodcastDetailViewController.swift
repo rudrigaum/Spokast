@@ -10,6 +10,11 @@ import UIKit
 import Kingfisher
 import Combine
 
+protocol PodcastDetailCoordinatorDelegate: AnyObject {
+    var navigationController: UINavigationController { get }
+    func showEpisodeDetails(_ episode: Episode, from podcast: Podcast)
+}
+
 final class PodcastDetailViewController: UIViewController {
     
     // MARK: - Properties
@@ -20,7 +25,7 @@ final class PodcastDetailViewController: UIViewController {
     }
     
     private var cancellables = Set<AnyCancellable>()
-    weak var coordinator: HomeCoordinator?
+    weak var coordinator: PodcastDetailCoordinatorDelegate?
     
     // MARK: - Initialization
     init(viewModel: PodcastDetailViewModel) {
@@ -176,14 +181,21 @@ extension PodcastDetailViewController: UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        viewModel.playEpisode(at: indexPath.row)
-        
         let episode = viewModel.episodes[indexPath.row]
-        viewModel.didTapPlay(episode: episode)
-        coordinator?.presentPlayer(for: episode, podcastImageURL: viewModel.coverImageURL)
+        coordinator?.showEpisodeDetails(episode, from: viewModel.podcast)
     }
     
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
         return 300
+    }
+}
+
+extension PodcastDetailCoordinatorDelegate {
+    
+    func showEpisodeDetails(_ episode: Episode, from podcast: Podcast) {
+        let viewModel = EpisodeDetailViewModel(episode: episode, podcast: podcast)
+        let episodeDetailVC = EpisodeDetailViewController(viewModel: viewModel)
+        
+        navigationController.pushViewController(episodeDetailVC, animated: true)
     }
 }
