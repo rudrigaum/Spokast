@@ -49,6 +49,9 @@ extension SearchCoordinator: PodcastSelectionDelegate {
         )
         
         let detailVC = PodcastDetailViewController(viewModel: detailViewModel)
+        detailVC.coordinator = self
         navigationController.pushViewController(detailVC, animated: true)
     }
 }
+
+extension SearchCoordinator: PodcastDetailCoordinatorDelegate {}

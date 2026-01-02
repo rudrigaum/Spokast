@@ -11,7 +11,7 @@ import Combine
 final class PodcastDetailViewModel {
 
     // MARK: - Properties
-    private let podcast: Podcast
+    let podcast: Podcast
     private let service: APIService
     private let audioPlayerService: AudioPlayerServiceProtocol
     private let favoritesRepository: FavoritesRepositoryProtocol

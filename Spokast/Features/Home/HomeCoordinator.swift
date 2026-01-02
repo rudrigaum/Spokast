@@ -59,3 +59,5 @@ extension HomeCoordinator: HomeViewControllerDelegate {
         navigationController.pushViewController(detailViewController, animated: true)
     }
 }
+
+extension HomeCoordinator: PodcastDetailCoordinatorDelegate {}
