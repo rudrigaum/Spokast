@@ -161,17 +161,27 @@ extension PodcastDetailViewController: UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: "EpisodeCell", for: indexPath) as? EpisodeCell else {
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: EpisodeCell.reuseIdentifier, for: indexPath) as? EpisodeCell else {
             return UITableViewCell()
         }
         
         let episode = viewModel.episodes[indexPath.row]
+        
+        let podcastArtString = viewModel.podcast.artworkUrl600 ?? viewModel.podcast.artworkUrl100
+        let podcastArtURL = URL(string: podcastArtString)
         let isPlayingThisEpisode = viewModel.isPlaying && (viewModel.currentPlayingID == episode.id)
+        
 
-        cell.configure(with: episode, isPlaying: isPlayingThisEpisode)
+        cell.configure(
+            with: episode,
+            podcastArtURL: podcastArtURL,
+            isPlaying: isPlayingThisEpisode
+        )
+        
         cell.onPlayTap = { [weak self] in
             self?.viewModel.playEpisode(at: indexPath.row)
         }
+        
         return cell
     }
 }

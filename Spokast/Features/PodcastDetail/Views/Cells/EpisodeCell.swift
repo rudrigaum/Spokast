@@ -7,6 +7,7 @@
 
 import Foundation
 import UIKit
+import Kingfisher
 
 final class EpisodeCell: UITableViewCell {
 
@@ -16,12 +17,27 @@ final class EpisodeCell: UITableViewCell {
     var onPlayTap: (() -> Void)?
     
     // MARK: - UI Components
-    private lazy var playIconContainer: UIView = {
+    private lazy var artworkContainer: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = .systemPurple.withAlphaComponent(0.1)
-        view.layer.cornerRadius = 20
+        view.backgroundColor = .secondarySystemBackground
+        view.layer.cornerRadius = 10
+        view.clipsToBounds = true
         view.isUserInteractionEnabled = true
+        return view
+    }()
+    
+    private let artworkImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.contentMode = .scaleAspectFill
+        return imageView
+    }()
+    
+    private let overlayView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = .black.withAlphaComponent(0.4)
         return view
     }()
     
@@ -29,7 +45,7 @@ final class EpisodeCell: UITableViewCell {
         let imageView = UIImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.image = UIImage(systemName: "play.fill")
-        imageView.tintColor = .systemPurple
+        imageView.tintColor = .white
         imageView.contentMode = .scaleAspectFit
         return imageView
     }()
@@ -37,7 +53,7 @@ final class EpisodeCell: UITableViewCell {
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .systemFont(ofSize: 16, weight: .semibold)
+        label.font = .systemFont(ofSize: 13, weight: .semibold)
         label.textColor = .label
         label.numberOfLines = 2
         return label
@@ -46,7 +62,7 @@ final class EpisodeCell: UITableViewCell {
     private let descriptionLabel: UILabel = {
         let label = UILabel()
         label.translatesAutoresizingMaskIntoConstraints = false
-        label.font = .systemFont(ofSize: 14, weight: .regular)
+        label.font = .systemFont(ofSize: 13, weight: .regular)
         label.textColor = .secondaryLabel
         label.numberOfLines = 1
         return label
@@ -73,8 +89,15 @@ final class EpisodeCell: UITableViewCell {
         fatalError("init(coder:) has not been implemented")
     }
     
+    // MARK: - Lifecycle
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        artworkImageView.kf.cancelDownloadTask()
+        artworkImageView.image = nil
+    }
+    
     // MARK: - Configuration
-    func configure(with episode: Episode, isPlaying: Bool) {
+    func configure(with episode: Episode, podcastArtURL: URL?, isPlaying: Bool) {
         titleLabel.text = episode.trackName
         
         let dateFormatter = DateFormatter()
@@ -83,6 +106,15 @@ final class EpisodeCell: UITableViewCell {
         let durationText = formatDuration(millis: episode.trackTimeMillis)
         
         descriptionLabel.text = "\(dateString) • \(durationText)"
+        
+        let episodeURL = URL(string: episode.artworkUrl160 ?? episode.artworkUrl600 ?? "")
+        let finalURL = episodeURL ?? podcastArtURL
+        
+        artworkImageView.kf.setImage(
+            with: finalURL,
+            placeholder: UIImage(systemName: "photo")
+        )
+        
         updatePlaybackState(isPlaying: isPlaying)
     }
     
@@ -107,22 +139,20 @@ final class EpisodeCell: UITableViewCell {
         UIView.transition(with: playImageView, duration: 0.2, options: .transitionCrossDissolve) {
             self.playImageView.image = UIImage(systemName: iconName)
         }
-        
-        playIconContainer.backgroundColor = isPlaying ? .systemPurple.withAlphaComponent(0.3) : .systemPurple.withAlphaComponent(0.1)
     }
     
     // MARK: - Gestures
     private func setupGestures() {
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(didTapPlayContainer))
-        playIconContainer.addGestureRecognizer(tapGesture)
+        artworkContainer.addGestureRecognizer(tapGesture)
     }
     
     @objc private func didTapPlayContainer() {
         UIView.animate(withDuration: 0.1, animations: {
-            self.playIconContainer.transform = CGAffineTransform(scaleX: 0.9, y: 0.9)
+            self.artworkContainer.transform = CGAffineTransform(scaleX: 0.95, y: 0.95)
         }) { _ in
             UIView.animate(withDuration: 0.1) {
-                self.playIconContainer.transform = .identity
+                self.artworkContainer.transform = .identity
             }
         }
         onPlayTap?()
@@ -131,27 +161,41 @@ final class EpisodeCell: UITableViewCell {
     // MARK: - UI Setup
     private func setupUI() {
         backgroundColor = .systemBackground
-        selectionStyle = .default
+        selectionStyle = .none
         
-        contentView.addSubview(playIconContainer)
-        playIconContainer.addSubview(playImageView)
+        contentView.addSubview(artworkContainer)
+        artworkContainer.addSubview(artworkImageView)
+        artworkContainer.addSubview(overlayView)
+        artworkContainer.addSubview(playImageView)
+        
         contentView.addSubview(textStackView)
         
         NSLayoutConstraint.activate([
-            playIconContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            playIconContainer.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            playIconContainer.heightAnchor.constraint(equalToConstant: 40),
-            playIconContainer.widthAnchor.constraint(equalToConstant: 40),
+            artworkContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            artworkContainer.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            artworkContainer.heightAnchor.constraint(equalToConstant: 60),
+            artworkContainer.widthAnchor.constraint(equalToConstant: 60),
             
-            playImageView.centerXAnchor.constraint(equalTo: playIconContainer.centerXAnchor),
-            playImageView.centerYAnchor.constraint(equalTo: playIconContainer.centerYAnchor),
-            playImageView.heightAnchor.constraint(equalToConstant: 16),
-            playImageView.widthAnchor.constraint(equalToConstant: 16),
+            artworkImageView.topAnchor.constraint(equalTo: artworkContainer.topAnchor),
+            artworkImageView.bottomAnchor.constraint(equalTo: artworkContainer.bottomAnchor),
+            artworkImageView.leadingAnchor.constraint(equalTo: artworkContainer.leadingAnchor),
+            artworkImageView.trailingAnchor.constraint(equalTo: artworkContainer.trailingAnchor),
             
-            textStackView.leadingAnchor.constraint(equalTo: playIconContainer.trailingAnchor, constant: 16),
+            overlayView.topAnchor.constraint(equalTo: artworkContainer.topAnchor),
+            overlayView.bottomAnchor.constraint(equalTo: artworkContainer.bottomAnchor),
+            overlayView.leadingAnchor.constraint(equalTo: artworkContainer.leadingAnchor),
+            overlayView.trailingAnchor.constraint(equalTo: artworkContainer.trailingAnchor),
+            
+            playImageView.centerXAnchor.constraint(equalTo: artworkContainer.centerXAnchor),
+            playImageView.centerYAnchor.constraint(equalTo: artworkContainer.centerYAnchor),
+            playImageView.heightAnchor.constraint(equalToConstant: 24),
+            playImageView.widthAnchor.constraint(equalToConstant: 24),
+            
+            textStackView.leadingAnchor.constraint(equalTo: artworkContainer.trailingAnchor, constant: 16),
             textStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
-            textStackView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
-            textStackView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -12)
+            textStackView.centerYAnchor.constraint(equalTo: artworkContainer.centerYAnchor),
+            textStackView.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor, constant: 10),
+            textStackView.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -10)
         ])
     }
 }
