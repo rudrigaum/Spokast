@@ -31,33 +31,48 @@ final class MiniPlayerViewModel {
     
     // MARK: - User Intent
     func togglePlayPause() {
-        service.togglePlayPause()
+        guard let episode = service.currentEpisode,
+              let urlString = episode.previewUrl,
+              let url = URL(string: urlString) else {
+            return
+        }
+        service.toggle(url: url)
     }
     
-    // MARK: - Private Methods
+    // MARK: - Bindings
     private func setupBindings() {
+        bindPlayerState()
+        bindEpisodeData()
+    }
+    
+    private func bindPlayerState() {
         service.playerStatePublisher
             .receive(on: DispatchQueue.main)
+            .map { state -> Bool in
+                if case .playing = state { return true }
+                return false
+            }
             .assign(to: \.isPlaying, on: self)
             .store(in: &cancellables)
-        
-        Publishers.CombineLatest(service.currentEpisodePublisher, service.currentPodcastPublisher)
+    }
+    
+    private func bindEpisodeData() {
+        service.currentEpisodePublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] episode, podcast in
-                guard let self = self else { return }
-                
-                if let episode = episode, let podcast = podcast {
-                    self.isVisible = true
-                    self.episodeTitle = episode.trackName
-                    self.podcastTitle = podcast.collectionName
-                    
-                    let urlString = episode.artworkUrl600 ?? podcast.artworkUrl600 ?? podcast.artworkUrl100
-                    self.imageURL = URL(string: urlString)
-                    
-                } else {
-                    self.isVisible = false
-                }
+            .sink { [weak self] episode in
+                self?.updatePlayerMetadata(with: episode)
             }
             .store(in: &cancellables)
+    }
+    
+    private func updatePlayerMetadata(with episode: Episode?) {
+        if let episode = episode {
+            self.isVisible = true
+            self.episodeTitle = episode.trackName
+            self.podcastTitle = episode.collectionName ?? episode.artistName ?? "Podcast"
+            self.imageURL = self.service.currentPodcastImageURL
+        } else {
+            self.isVisible = false
+        }
     }
 }

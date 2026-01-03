@@ -76,12 +76,12 @@ final class MainTabBarController: UITabBarController {
     }
     
     private func presentPlayer() {
-        guard let currentEpisode = AudioService.shared.currentEpisode else {
+        guard let currentEpisode = AudioPlayerService.shared.currentEpisode else {
             print("⚠️ Nenhum episódio selecionado no AudioService")
             return
         }
         
-        let currentImageURL = AudioService.shared.currentPodcastImageURL
+        let currentImageURL = AudioPlayerService.shared.currentPodcastImageURL
         let favoritesRepository = FavoritesRepository()
         
         let playerVM = PlayerViewModel(
