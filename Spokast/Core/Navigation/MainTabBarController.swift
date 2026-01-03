@@ -22,8 +22,6 @@ final class MainTabBarController: UITabBarController {
         return view
     }()
     
-    private var playerBottomConstraint: NSLayoutConstraint?
-    
     // MARK: - Init
     init(viewControllers: [UIViewController]) {
         self.miniPlayerViewModel = MiniPlayerViewModel()
@@ -42,6 +40,7 @@ final class MainTabBarController: UITabBarController {
         super.viewDidLoad()
         setupMiniPlayerLayout()
         setupBindings()
+        setupActions()
     }
     
     // MARK: - Setup UI
@@ -67,6 +66,34 @@ final class MainTabBarController: UITabBarController {
             miniPlayerView.heightAnchor.constraint(equalToConstant: playerHeight),
             miniPlayerView.bottomAnchor.constraint(equalTo: tabBar.topAnchor)
         ])
+    }
+    
+    // MARK: - Actions
+    private func setupActions() {
+        miniPlayerView.onTap = { [weak self] in
+            self?.presentPlayer()
+        }
+    }
+    
+    private func presentPlayer() {
+        guard let currentEpisode = AudioService.shared.currentEpisode else {
+            print("⚠️ Nenhum episódio selecionado no AudioService")
+            return
+        }
+        
+        let currentImageURL = AudioService.shared.currentPodcastImageURL
+        let favoritesRepository = FavoritesRepository()
+        
+        let playerVM = PlayerViewModel(
+            episode: currentEpisode,
+            podcastImageURL: currentImageURL,
+            favoritesRepository: favoritesRepository
+        )
+        
+        let playerVC = PlayerViewController(viewModel: playerVM)
+        playerVC.modalPresentationStyle = .automatic
+        
+        self.present(playerVC, animated: true)
     }
     
     // MARK: - Bindings

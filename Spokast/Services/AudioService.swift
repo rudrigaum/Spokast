@@ -18,8 +18,12 @@ enum AudioPlayerState: Equatable {
 protocol AudioPlayerProtocol {
     var playerState: CurrentValueSubject<AudioPlayerState, Never> { get }
     var progressPublisher: PassthroughSubject<(currentTime: Double, duration: Double), Never> { get }
+    var currentEpisode: Episode? { get }
+    var currentPodcastImageURL: URL? { get }
     
     func play(url: URL)
+    func play(episode: Episode, from podcast: Podcast)
+    
     func pause()
     func stop()
     func toggle(url: URL)
@@ -33,6 +37,8 @@ final class AudioService: AudioPlayerProtocol {
     // MARK: - Properties
     private var player: AVPlayer?
     private var timeObserverToken: Any?
+    var currentEpisode: Episode?
+    var currentPodcastImageURL: URL?
     
     let playerState = CurrentValueSubject<AudioPlayerState, Never>(.stopped)
     let progressPublisher = PassthroughSubject<(currentTime: Double, duration: Double), Never>()
@@ -43,6 +49,17 @@ final class AudioService: AudioPlayerProtocol {
     }
     
     // MARK: - Methods
+    func play(episode: Episode, from podcast: Podcast) {
+        self.currentEpisode = episode
+        let artworkString = episode.artworkUrl600 ?? episode.artworkUrl160 ?? podcast.artworkUrl600 ?? podcast.artworkUrl100
+    
+        self.currentPodcastImageURL = URL(string: artworkString)
+        
+        if let previewUrl = episode.previewUrl, let url = URL(string: previewUrl) {
+            self.play(url: url)
+        }
+    }
+    
     func play(url: URL) {
         if case .paused(let currentUrl) = playerState.value, currentUrl == url {
             player?.play()

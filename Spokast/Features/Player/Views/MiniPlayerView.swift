@@ -15,6 +15,7 @@ final class MiniPlayerView: UIView {
     // MARK: - Properties
     private let viewModel: MiniPlayerViewModel
     private var cancellables = Set<AnyCancellable>()
+    var onTap: (() -> Void)?
     
     // MARK: - UI Components
     private let blurView: UIVisualEffectView = {
@@ -83,6 +84,7 @@ final class MiniPlayerView: UIView {
         super.init(frame: .zero)
         setupLayout()
         setupBindings()
+        setupGestures()
     }
     
     @available(*, unavailable)
@@ -91,9 +93,18 @@ final class MiniPlayerView: UIView {
     }
     
     // MARK: - Actions
-    
     @objc private func didTapPlayPause() {
         viewModel.togglePlayPause()
+    }
+    
+    @objc private func didTapContainer() {
+        onTap?()
+    }
+    
+    // MARK: - Gestures
+    private func setupGestures() {
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(didTapContainer))
+        self.addGestureRecognizer(tapGesture)
     }
     
     // MARK: - Bindings
@@ -161,7 +172,7 @@ final class MiniPlayerView: UIView {
             imageView.topAnchor.constraint(equalTo: topAnchor, constant: 8),
             imageView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8),
             imageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-            imageView.widthAnchor.constraint(equalTo: imageView.heightAnchor), // Quadrada
+            imageView.widthAnchor.constraint(equalTo: imageView.heightAnchor),
             
             playPauseButton.centerYAnchor.constraint(equalTo: centerYAnchor),
             playPauseButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
