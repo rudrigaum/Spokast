@@ -101,6 +101,12 @@ final class PodcastDetailViewModel {
     private func setupAudioObserver() {
         audioPlayerService.playerStatePublisher
             .receive(on: DispatchQueue.main)
+            .map { state -> Bool in
+                if case .playing = state {
+                    return true
+                }
+                return false
+            }
             .assign(to: \.isPlaying, on: self)
             .store(in: &cancellables)
         

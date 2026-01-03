@@ -13,7 +13,7 @@ final class PlayerViewModel {
     // MARK: - Dependencies
     private let episode: Episode
     private let podcastImageURL: URL?
-    private let audioService: AudioPlayerProtocol
+    private let audioPlayerService: AudioPlayerServiceProtocol
     private let favoritesRepository: FavoritesRepositoryProtocol
     
     private var cancellables = Set<AnyCancellable>()
@@ -32,12 +32,12 @@ final class PlayerViewModel {
     // MARK: - Initialization
     init(episode: Episode,
          podcastImageURL: URL?,
-         audioService: AudioPlayerProtocol = AudioService.shared,
+         audioService: AudioPlayerServiceProtocol = AudioPlayerService.shared,
          favoritesRepository: FavoritesRepositoryProtocol) {
         
         self.episode = episode
         self.podcastImageURL = podcastImageURL
-        self.audioService = audioService
+        self.audioPlayerService = audioService
         self.favoritesRepository = favoritesRepository
         
         self.title = episode.trackName
@@ -51,23 +51,23 @@ final class PlayerViewModel {
     // MARK: - User Actions
     func didTapPlayPause() {
         if let urlString = episode.previewUrl, let url = URL(string: urlString) {
-            audioService.toggle(url: url)
+            audioPlayerService.toggle(url: url)
         }
     }
     
     func didTapForward() {
         let newTime = (progressValue * Float(currentDuration)) + 30
-        audioService.seek(to: Double(newTime))
+        audioPlayerService.seek(to: Double(newTime))
     }
     
     func didTapRewind() {
         let newTime = (progressValue * Float(currentDuration)) - 15
-        audioService.seek(to: Double(newTime))
+        audioPlayerService.seek(to: Double(newTime))
     }
     
     func didScrub(to value: Float) {
         let targetTime = Double(value) * currentDuration
-        audioService.seek(to: targetTime)
+        audioPlayerService.seek(to: targetTime)
     }
     
     func didTapFavorite() {
@@ -91,7 +91,7 @@ final class PlayerViewModel {
     
     // MARK: - Helper Handlers
     private func bindPlayerState() {
-        audioService.playerState
+        audioPlayerService.playerStatePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] state in
                 self?.handlePlayerStateChange(state)
@@ -100,7 +100,7 @@ final class PlayerViewModel {
     }
     
     private func bindProgress() {
-        audioService.progressPublisher
+        audioPlayerService.progressPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] (currentTime, duration) in
                 self?.handleProgressUpdate(currentTime: currentTime, duration: duration)
