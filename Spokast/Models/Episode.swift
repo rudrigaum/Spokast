@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Episode: Decodable, Identifiable {
+struct Episode: Codable, Identifiable {
     var id: Int { trackId }
     let trackId: Int
     let trackName: String
