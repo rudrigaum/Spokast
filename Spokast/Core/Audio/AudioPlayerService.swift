@@ -40,7 +40,7 @@ final class AudioPlayerService: AudioPlayerServiceProtocol {
     // MARK: - Properties
     private var player: AVPlayer?
     private var timeObserverToken: Any?
-    
+    var persistence: PlaybackPersistenceProtocol = UserDefaultsPlaybackPersistence()
     let playerStatePublisher = CurrentValueSubject<AudioPlayerState, Never>(.stopped)
     let progressPublisher = PassthroughSubject<(currentTime: Double, duration: Double), Never>()
     let currentEpisodePublisher = CurrentValueSubject<Episode?, Never>(nil)
@@ -88,6 +88,7 @@ final class AudioPlayerService: AudioPlayerServiceProtocol {
         player?.pause()
         if case .playing(let url) = playerStatePublisher.value {
             playerStatePublisher.send(.paused(url: url))
+            saveCurrentState()
         }
     }
     
@@ -115,7 +116,6 @@ final class AudioPlayerService: AudioPlayerServiceProtocol {
     }
     
     // MARK: - Private Setup
-    
     private func setupAudioSession() {
         do {
             try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
@@ -142,6 +142,59 @@ final class AudioPlayerService: AudioPlayerServiceProtocol {
         if let token = timeObserverToken {
             player?.removeTimeObserver(token)
             timeObserverToken = nil
+        }
+    }
+    
+    // MARK: - Persistence Logic
+    @objc func saveCurrentState() {
+        guard let episode = currentEpisode,
+              let player = player else { return }
+        
+        let currentTime = player.currentTime().seconds
+        let duration = player.currentItem?.duration.seconds ?? 0
+        
+        if currentTime < 5 || (duration > 0 && (duration - currentTime) < 3) {
+            return
+        }
+        
+        let podcastTitle = episode.collectionName ?? episode.artistName ?? "Podcast"
+        
+        let checkpoint = PlaybackCheckpoint(
+            episode: episode,
+            podcastTitle: podcastTitle,
+            podcastArtWorkURL: currentPodcastImageURL,
+            timestamp: currentTime,
+            savedAt: Date()
+        )
+        
+        do {
+            try persistence.save(checkpoint: checkpoint)
+            print("💾 Checkpoint saved at \(Int(currentTime))s")
+        } catch {
+            print("❌ Failed to save checkpoint: \(error)")
+        }
+    }
+    
+    // MARK: - Restoration Logic
+    func restoreLastState() {
+        guard let checkpoint = persistence.load() else {
+            print("💾 No playback checkpoint found.")
+            return
+        }
+        
+        print("💾 Restoring checkpoint: \(checkpoint.podcastTitle) at \(Int(checkpoint.timestamp))s")
+        
+        self.currentEpisode = checkpoint.episode
+        self.currentPodcastImageURL = checkpoint.podcastArtWorkURL
+        
+        if let previewUrl = checkpoint.episode.previewUrl, let url = URL(string: previewUrl) {
+            let playerItem = AVPlayerItem(url: url)
+            player = AVPlayer(playerItem: playerItem)
+            
+            let cmTime = CMTime(seconds: checkpoint.timestamp, preferredTimescale: 1000)
+            player?.seek(to: cmTime)
+            playerStatePublisher.send(.paused(url: url))
+            setupPeriodicTimeObserver()
         }
     }
 }

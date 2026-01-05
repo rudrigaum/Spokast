@@ -41,6 +41,7 @@ final class MainTabBarController: UITabBarController {
         setupMiniPlayerLayout()
         setupBindings()
         setupActions()
+        AudioPlayerService.shared.restoreLastState()
     }
     
     // MARK: - Setup UI
