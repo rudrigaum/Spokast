@@ -119,6 +119,17 @@ final class PlayerView: UIView {
         return button
     }()
     
+    let speedButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.titleLabel?.font = .systemFont(ofSize: 15, weight: .bold)
+        button.setTitle("1.0x", for: .normal)
+        button.tintColor = .label
+        button.backgroundColor = .secondarySystemBackground
+        button.layer.cornerRadius = 8
+        return button
+    }()
+    
     private lazy var controlsStackView: UIStackView = {
         let stack = UIStackView(arrangedSubviews: [rewindButton, playPauseButton, forwardButton])
         stack.translatesAutoresizingMaskIntoConstraints = false
@@ -128,6 +139,13 @@ final class PlayerView: UIView {
         stack.spacing = 40
         return stack
     }()
+    
+    private lazy var speedContainerView: UIView = {
+        let view = UIView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(speedButton)
+        return view
+    }()
 
     private lazy var mainStackView: UIStackView = {
         let stack = UIStackView(arrangedSubviews: [
@@ -136,7 +154,8 @@ final class PlayerView: UIView {
             artistLabel,
             progressSlider,
             timeStackView,
-            controlsStackView
+            controlsStackView,
+            speedContainerView
         ])
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.axis = .vertical
@@ -184,10 +203,19 @@ final class PlayerView: UIView {
             
             coverContainerView.heightAnchor.constraint(equalTo: coverContainerView.widthAnchor),
             
+            speedButton.centerXAnchor.constraint(equalTo: speedContainerView.centerXAnchor),
+            speedButton.topAnchor.constraint(equalTo: speedContainerView.topAnchor),
+            speedButton.bottomAnchor.constraint(equalTo: speedContainerView.bottomAnchor),
+            speedButton.heightAnchor.constraint(equalToConstant: 36),
+            speedButton.widthAnchor.constraint(equalToConstant: 100),
+            
             coverImageView.topAnchor.constraint(equalTo: coverContainerView.topAnchor),
             coverImageView.leadingAnchor.constraint(equalTo: coverContainerView.leadingAnchor),
             coverImageView.trailingAnchor.constraint(equalTo: coverContainerView.trailingAnchor),
             coverImageView.bottomAnchor.constraint(equalTo: coverContainerView.bottomAnchor),
+            
+            playPauseButton.heightAnchor.constraint(equalToConstant: 64),
+            playPauseButton.widthAnchor.constraint(equalToConstant: 64),
             
             mainStackView.topAnchor.constraint(equalTo: grabberView.bottomAnchor, constant: 32),
             mainStackView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 24),
