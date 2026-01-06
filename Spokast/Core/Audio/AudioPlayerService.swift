@@ -20,6 +20,7 @@ protocol AudioPlayerServiceProtocol {
     var playerStatePublisher: CurrentValueSubject<AudioPlayerState, Never> { get }
     var progressPublisher: PassthroughSubject<(currentTime: Double, duration: Double), Never> { get }
     var currentEpisodePublisher: CurrentValueSubject<Episode?, Never> { get }
+    var playbackRatePublisher: CurrentValueSubject<Float, Never> { get }
     
     var currentEpisode: Episode? { get }
     var currentPodcastImageURL: URL? { get }
@@ -30,6 +31,7 @@ protocol AudioPlayerServiceProtocol {
     func stop()
     func toggle(url: URL)
     func seek(to time: Double)
+    func setPlaybackRate(_ rate: Float)
 }
 
 // MARK: - Service Implementation
@@ -44,6 +46,7 @@ final class AudioPlayerService: AudioPlayerServiceProtocol {
     let playerStatePublisher = CurrentValueSubject<AudioPlayerState, Never>(.stopped)
     let progressPublisher = PassthroughSubject<(currentTime: Double, duration: Double), Never>()
     let currentEpisodePublisher = CurrentValueSubject<Episode?, Never>(nil)
+    let playbackRatePublisher = CurrentValueSubject<Float, Never>(1.0)
     
     var currentEpisode: Episode? {
         didSet { currentEpisodePublisher.send(currentEpisode) }
@@ -70,6 +73,7 @@ final class AudioPlayerService: AudioPlayerServiceProtocol {
     func play(url: URL) {
         if case .paused(let currentUrl) = playerStatePublisher.value, currentUrl == url {
             player?.play()
+            player?.rate = playbackRatePublisher.value
             playerStatePublisher.send(.playing(url: url))
             return
         }
@@ -82,6 +86,14 @@ final class AudioPlayerService: AudioPlayerServiceProtocol {
         
         setupPeriodicTimeObserver()
         playerStatePublisher.send(.playing(url: url))
+    }
+    
+    func setPlaybackRate(_ rate: Float) {
+        playbackRatePublisher.send(rate)
+        
+        if case .playing = playerStatePublisher.value {
+            player?.rate = rate
+        }
     }
     
     func pause() {

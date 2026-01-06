@@ -48,6 +48,7 @@ final class PlayerViewController: UIViewController {
         customView.forwardButton.addTarget(self, action: #selector(didTapForward), for: .touchUpInside)
         customView.rewindButton.addTarget(self, action: #selector(didTapRewind), for: .touchUpInside)
         customView.progressSlider.addTarget(self, action: #selector(didScrubSlider(_:)), for: .valueChanged)
+        customView.speedButton.addTarget(self, action: #selector(didTapSpeedButton), for: .touchUpInside)
     }
     
     @objc private func didScrubSlider(_ sender: UISlider) {
@@ -67,6 +68,10 @@ final class PlayerViewController: UIViewController {
         viewModel.didTapRewind()
     }
     
+    @objc private func didTapSpeedButton() {
+        viewModel.togglePlaybackSpeed()
+    }
+    
     // MARK: - Bindings
     private func setupBindings() {
         guard let customView = customView else { return }
@@ -76,6 +81,7 @@ final class PlayerViewController: UIViewController {
         bindPlayerState(to: customView)
         bindPlayerProgress(to: customView)
         bindTimeLabels(to: customView)
+        bindPlaybackSpeed(to: customView)
     }
     
     private func bindHeaderData(to view: PlayerView) {
@@ -126,6 +132,18 @@ final class PlayerViewController: UIViewController {
             .sink { [weak view] (current, total) in
                 view?.currentTimeLabel.text = current
                 view?.totalTimeLabel.text = total
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func bindPlaybackSpeed(to view: PlayerView) {
+        viewModel.$playbackSpeedLabel
+            .receive(on: DispatchQueue.main)
+            .sink { [weak view] text in
+                UIView.performWithoutAnimation {
+                    view?.speedButton.setTitle(text, for: .normal)
+                    view?.speedButton.layoutIfNeeded()
+                }
             }
             .store(in: &cancellables)
     }

@@ -18,6 +18,9 @@ final class PlayerViewModel {
     
     private var cancellables = Set<AnyCancellable>()
     private var currentDuration: Double = 0.0
+    private var rawDuration: Double = 0.0
+    private var rawCurrentTime: Double = 0.0
+    private var currentRate: Float = 1.0
     
     // MARK: - Outputs
     @Published private(set) var title: String
@@ -27,7 +30,8 @@ final class PlayerViewModel {
     @Published private(set) var isFavorite: Bool = false
     @Published private(set) var progressValue: Float = 0.0
     @Published private(set) var currentTimeText: String = "00:00"
-    @Published private(set) var durationText: String = "--:--"
+    @Published private(set) var durationText: String = "00:00"
+    @Published var playbackSpeedLabel: String = "1.0x"
     
     // MARK: - Initialization
     init(episode: Episode,
@@ -87,6 +91,8 @@ final class PlayerViewModel {
     private func setupBindings() {
         bindPlayerState()
         bindProgress()
+        bindPlaybackRate()
+        bindPlayerProgress()
     }
     
     // MARK: - Helper Handlers
@@ -106,6 +112,48 @@ final class PlayerViewModel {
                 self?.handleProgressUpdate(currentTime: currentTime, duration: duration)
             }
             .store(in: &cancellables)
+    }
+    
+    private func bindPlaybackRate() {
+        audioPlayerService.playbackRatePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] rate in
+                guard let self = self else { return }
+                
+                self.currentRate = rate
+                self.playbackSpeedLabel = String(format: "%.1fx", rate)
+                self.updateTimeDisplay()
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func bindPlayerProgress() {
+        audioPlayerService.progressPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] (currentTime, duration) in
+                guard let self = self else { return }
+                
+                self.rawCurrentTime = currentTime
+                self.rawDuration = duration
+                
+                if duration > 0 {
+                    self.progressValue = Float(currentTime / duration)
+                } else {
+                    self.progressValue = 0.0
+                }
+                
+                self.updateTimeDisplay()
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func updateTimeDisplay() {
+        let safeRate = (currentRate > 0) ? Double(currentRate) : 1.0
+        let scaledCurrentTime = rawCurrentTime / safeRate
+        let scaledDuration = rawDuration / safeRate
+        
+        self.currentTimeText = formatTime(scaledCurrentTime)
+        self.durationText = formatTime(scaledDuration)
     }
     
     private func handlePlayerStateChange(_ state: AudioPlayerState) {
@@ -142,5 +190,20 @@ final class PlayerViewModel {
         } else {
             return String(format: "%02d:%02d", minutes, seconds)
         }
+    }
+    
+    func togglePlaybackSpeed() {
+        let currentRate = audioPlayerService.playbackRatePublisher.value
+        let nextRate: Float
+        
+        if currentRate < 1.5 {
+            nextRate = 1.5
+        } else if currentRate < 2.0 {
+            nextRate = 2.0
+        } else {
+            nextRate = 1.0
+        }
+        
+        audioPlayerService.setPlaybackRate(nextRate)
     }
 }
