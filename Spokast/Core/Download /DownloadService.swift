@@ -6,12 +6,14 @@
 //
 
 import Foundation
+import Foundation
 import Combine
 
 final class DownloadService: NSObject, DownloadServiceProtocol {
     
     // MARK: - Properties
     var activeDownloadsPublisher = CurrentValueSubject<[URL: DownloadStatus], Never>([:])
+    
     private lazy var session: URLSession = {
         let config = URLSessionConfiguration.default
         return URLSession(configuration: config, delegate: self, delegateQueue: nil)
@@ -19,6 +21,31 @@ final class DownloadService: NSObject, DownloadServiceProtocol {
     
     private var activeTasks: [URL: URLSessionDownloadTask] = [:]
     private let fileManager = FileManager.default
+    private let persistence: DownloadPersistenceProtocol
+
+    init(persistence: DownloadPersistenceProtocol = DownloadPersistence()) {
+        self.persistence = persistence
+        super.init()
+        restoreState()
+    }
+    
+    // MARK: - Restoration
+    private func restoreState() {
+        let savedUrls = persistence.getDownloadedEpisodes()
+        var currentStatus = activeDownloadsPublisher.value
+        
+        for url in savedUrls {
+            let localUrl = localFilePath(for: url)
+            if fileManager.fileExists(atPath: localUrl.path) {
+                currentStatus[url] = .downloaded(localURL: localUrl)
+                print("♻️ Restored download: \(url.lastPathComponent)")
+            } else {
+                persistence.removeDownloadedEpisode(url)
+            }
+        }
+        
+        activeDownloadsPublisher.send(currentStatus)
+    }
     
     // MARK: - DownloadServiceProtocol
     func startDownload(for episode: Episode) {
@@ -26,6 +53,7 @@ final class DownloadService: NSObject, DownloadServiceProtocol {
         
         if hasLocalFile(for: episode) != nil {
             updateStatus(.downloaded(localURL: localFilePath(for: url)), for: url)
+            persistence.saveDownloadedEpisode(url)
             return
         }
         
@@ -40,10 +68,8 @@ final class DownloadService: NSObject, DownloadServiceProtocol {
     
     func cancelDownload(for episode: Episode) {
         guard let url = episode.streamUrl else { return }
-        
         activeTasks[url]?.cancel()
         activeTasks[url] = nil
-        
         updateStatus(.notDownloaded, for: url)
     }
     
@@ -62,6 +88,7 @@ final class DownloadService: NSObject, DownloadServiceProtocol {
                 try fileManager.removeItem(at: localURL)
                 print("🗑️ Deleted local file: \(localURL.lastPathComponent)")
             }
+            persistence.removeDownloadedEpisode(url)
             updateStatus(.notDownloaded, for: url)
         } catch {
             print("❌ Error deleting file: \(error)")
@@ -87,7 +114,6 @@ extension DownloadService: URLSessionDownloadDelegate {
     
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
         guard let url = downloadTask.originalRequest?.url else { return }
-        
         let progress = Float(totalBytesWritten) / Float(totalBytesExpectedToWrite)
         updateStatus(.downloading(progress: progress), for: url)
     }
@@ -98,11 +124,12 @@ extension DownloadService: URLSessionDownloadDelegate {
         
         do {
             try? fileManager.removeItem(at: destinationURL)
-            
             try fileManager.moveItem(at: location, to: destinationURL)
             
             print("✅ Download finished: \(destinationURL.lastPathComponent)")
             activeTasks[sourceURL] = nil
+        
+            persistence.saveDownloadedEpisode(sourceURL)
             updateStatus(.downloaded(localURL: destinationURL), for: sourceURL)
             
         } catch {
