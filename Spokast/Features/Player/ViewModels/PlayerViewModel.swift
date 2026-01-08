@@ -15,6 +15,7 @@ final class PlayerViewModel {
     private let podcastImageURL: URL?
     private let audioPlayerService: AudioPlayerServiceProtocol
     private let favoritesRepository: FavoritesRepositoryProtocol
+    private let downloadService: DownloadServiceProtocol
     
     private var cancellables = Set<AnyCancellable>()
     private var currentDuration: Double = 0.0
@@ -32,12 +33,14 @@ final class PlayerViewModel {
     @Published private(set) var currentTimeText: String = "00:00"
     @Published private(set) var durationText: String = "00:00"
     @Published var playbackSpeedLabel: String = "1.0x"
+    @Published var downloadState: DownloadButton.State = .notDownloaded
+
     
     // MARK: - Initialization
     init(episode: Episode,
          podcastImageURL: URL?,
          audioService: AudioPlayerServiceProtocol = AudioPlayerService.shared,
-         favoritesRepository: FavoritesRepositoryProtocol) {
+         favoritesRepository: FavoritesRepositoryProtocol, downloadService: DownloadServiceProtocol = DownloadService()) {
         
         self.episode = episode
         self.podcastImageURL = podcastImageURL
@@ -47,14 +50,16 @@ final class PlayerViewModel {
         self.title = episode.trackName
         self.artist = episode.collectionName ?? "Podcast"
         self.coverURL = podcastImageURL
+        self.downloadService = downloadService
         
         setupBindings()
         checkFavoriteStatus()
+        bindDownloadState()
     }
     
     // MARK: - User Actions
     func didTapPlayPause() {
-        if let urlString = episode.previewUrl, let url = URL(string: urlString) {
+        if let url = getPlayableURL() {
             audioPlayerService.toggle(url: url)
         }
     }
@@ -147,6 +152,57 @@ final class PlayerViewModel {
             .store(in: &cancellables)
     }
     
+    private func bindDownloadState() {
+        downloadService.activeDownloadsPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] downloads in
+                guard let self = self, let url = self.episode.streamUrl else { return }
+                
+                if let status = downloads[url] {
+                    self.mapDownloadStatusToUI(status)
+                } else {
+                    if self.downloadService.hasLocalFile(for: self.episode) != nil {
+                        self.downloadState = .downloaded
+                    } else {
+                        self.downloadState = .notDownloaded
+                    }
+                }
+            }
+            .store(in: &cancellables)
+    }
+        
+        private func mapDownloadStatusToUI(_ status: DownloadStatus) {
+            switch status {
+            case .notDownloaded:
+                self.downloadState = .notDownloaded
+            case .downloading(let progress):
+                self.downloadState = .downloading(progress: progress)
+            case .downloaded:
+                self.downloadState = .downloaded
+            case .failed:
+                self.downloadState = .notDownloaded // Ou tratar erro
+            }
+        }
+    
+    private func getPlayableURL() -> URL? {
+        if let localURL = downloadService.hasLocalFile(for: episode) {
+            print("🎧 Playing from LOCAL FILE: \(localURL.lastPathComponent)")
+            return localURL
+        }
+        
+        if let remoteURL = episode.streamUrl {
+            print("📡 Playing from REMOTE STREAM")
+            return remoteURL
+        }
+        
+        return nil
+    }
+
+    private func setupAudio() {
+        guard let url = getPlayableURL() else { return }
+        audioPlayerService.play(url: url)
+    }
+    
     private func updateTimeDisplay() {
         let safeRate = (currentRate > 0) ? Double(currentRate) : 1.0
         let scaledCurrentTime = rawCurrentTime / safeRate
@@ -205,5 +261,22 @@ final class PlayerViewModel {
         }
         
         audioPlayerService.setPlaybackRate(nextRate)
+    }
+    
+    func didTapDownload() {
+        switch downloadState {
+        case .notDownloaded:
+            downloadService.startDownload(for: episode)
+            
+        case .downloading:
+            downloadService.cancelDownload(for: episode)
+            
+        case .downloaded:
+            break
+        }
+    }
+    
+    func deleteDownloadedEpisode() {
+        downloadService.deleteLocalFile(for: episode)
     }
 }

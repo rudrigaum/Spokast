@@ -49,6 +49,7 @@ final class PlayerViewController: UIViewController {
         customView.rewindButton.addTarget(self, action: #selector(didTapRewind), for: .touchUpInside)
         customView.progressSlider.addTarget(self, action: #selector(didScrubSlider(_:)), for: .valueChanged)
         customView.speedButton.addTarget(self, action: #selector(didTapSpeedButton), for: .touchUpInside)
+        customView.downloadButton.addTarget(self, action: #selector(didTapDownload), for: .touchUpInside)
     }
     
     @objc private func didScrubSlider(_ sender: UISlider) {
@@ -72,6 +73,14 @@ final class PlayerViewController: UIViewController {
         viewModel.togglePlaybackSpeed()
     }
     
+    @objc private func didTapDownload() {
+        if case .downloaded = viewModel.downloadState {
+            showDeleteConfirmation()
+        } else {
+            viewModel.didTapDownload()
+        }
+    }
+    
     // MARK: - Bindings
     private func setupBindings() {
         guard let customView = customView else { return }
@@ -82,6 +91,7 @@ final class PlayerViewController: UIViewController {
         bindPlayerProgress(to: customView)
         bindTimeLabels(to: customView)
         bindPlaybackSpeed(to: customView)
+        bindDownloadState(to: customView)
     }
     
     private func bindHeaderData(to view: PlayerView) {
