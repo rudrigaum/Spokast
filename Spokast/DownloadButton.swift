@@ -36,19 +36,26 @@ final class DownloadButton: UIButton {
     
     // MARK: - Lifecycle
     override func layoutSubviews() {
-        super.layoutSubviews()
-        let centerPoint = CGPoint(x: bounds.width / 2, y: bounds.height / 2)
-        let circularPath = UIBezierPath(
-            arcCenter: centerPoint,
-            radius: (bounds.width / 2) - 2,
-            startAngle: -CGFloat.pi / 2,
-            endAngle: 2 * CGFloat.pi - CGFloat.pi / 2,
-            clockwise: true
-        )
-        
-        trackLayer.path = circularPath.cgPath
-        progressLayer.path = circularPath.cgPath
-    }
+            super.layoutSubviews()
+            
+            let centerPoint = CGPoint(x: bounds.width / 2, y: bounds.height / 2)
+            
+            let smallestDimension = min(bounds.width, bounds.height)
+            let radius = (smallestDimension / 2) - 2
+            
+            let circularPath = UIBezierPath(
+                arcCenter: centerPoint,
+                radius: radius,
+                startAngle: -CGFloat.pi / 2,
+                endAngle: 2 * CGFloat.pi - CGFloat.pi / 2,
+                clockwise: true
+            )
+            
+            trackLayer.path = circularPath.cgPath
+            progressLayer.path = circularPath.cgPath
+            trackLayer.frame = bounds
+            progressLayer.frame = bounds
+        }
     
     // MARK: - Public API
     func updateState(_ state: State) {
