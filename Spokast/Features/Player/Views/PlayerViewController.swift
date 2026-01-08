@@ -157,4 +157,37 @@ final class PlayerViewController: UIViewController {
             }
             .store(in: &cancellables)
     }
+    
+    private func bindDownloadState(to view: PlayerView) {
+        viewModel.$downloadState
+            .receive(on: DispatchQueue.main)
+            .sink { [weak view] state in
+                view?.downloadButton.updateState(state)
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func showDeleteConfirmation() {
+        let alert = UIAlertController(
+            title: "Remove Download",
+            message: "Do you want to remove this episode from your device?",
+            preferredStyle: .actionSheet
+        )
+        
+        let deleteAction = UIAlertAction(title: "Remove Download", style: .destructive) { [weak self] _ in
+            self?.viewModel.deleteDownloadedEpisode()
+        }
+        
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
+        
+        alert.addAction(deleteAction)
+        alert.addAction(cancelAction)
+        
+        if let popover = alert.popoverPresentationController, let customView = customView {
+            popover.sourceView = customView.downloadButton
+            popover.sourceRect = customView.downloadButton.bounds
+        }
+        
+        present(alert, animated: true)
+    }
 }
