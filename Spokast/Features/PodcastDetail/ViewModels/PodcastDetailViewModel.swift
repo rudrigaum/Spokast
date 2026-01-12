@@ -9,12 +9,15 @@ import Foundation
 import Combine
 
 final class PodcastDetailViewModel {
-
+    
     // MARK: - Properties
     let podcast: Podcast
     private let service: APIService
     private let audioPlayerService: AudioPlayerServiceProtocol
     private let favoritesRepository: FavoritesRepositoryProtocol
+    private let downloadService: DownloadServiceProtocol
+
+    private var downloadStatuses: [URL: DownloadStatus] = [:]
     private var cancellables = Set<AnyCancellable>()
     
     // MARK: - Outputs
@@ -25,19 +28,24 @@ final class PodcastDetailViewModel {
     @Published private(set) var isFavorite: Bool = false
     @Published var isPlaying: Bool = false
     @Published var currentPlayingID: Int?
+    @Published var onDownloadsUpdate: Void?
     
     // MARK: - Initialization
     init(podcast: Podcast,
          service: APIService,
          favoritesRepository: FavoritesRepositoryProtocol,
-         audioPlayerService: AudioPlayerServiceProtocol = AudioPlayerService.shared) {
+         audioPlayerService: AudioPlayerServiceProtocol = AudioPlayerService.shared,
+         downloadService: DownloadServiceProtocol = DownloadService()) {
+        
         self.podcast = podcast
         self.service = service
         self.favoritesRepository = favoritesRepository
         self.audioPlayerService = audioPlayerService
+        self.downloadService = downloadService
         
         setupAudioObserver()
         checkFavoriteStatus()
+        bindDownloads()
     }
     
     // MARK: - Computed Properties
@@ -97,14 +105,64 @@ final class PodcastDetailViewModel {
         audioPlayerService.play(episode: episode, from: podcast)
     }
     
+    // MARK: - Download Logic
+    private func bindDownloads() {
+        downloadService.activeDownloadsPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] statuses in
+                self?.downloadStatuses = statuses
+                self?.onDownloadsUpdate = ()
+            }
+            .store(in: &cancellables)
+    }
+    
+    func getDownloadStatus(for episode: Episode) -> DownloadButton.State {
+        guard let url = episode.streamUrl else { return .notDownloaded }
+        
+        if let status = downloadStatuses[url] {
+            switch status {
+            case .downloading(let progress): return .downloading(progress: progress)
+            case .downloaded: return .downloaded
+            case .notDownloaded, .failed: return .notDownloaded
+            }
+        }
+        
+        if let localURL = downloadService.hasLocalFile(for: episode) {
+            return .downloaded
+        }
+        
+        return .notDownloaded
+    }
+    
+    func toggleDownload(for episode: Episode) {
+        let status = getDownloadStatus(for: episode)
+        
+        switch status {
+        case .notDownloaded:
+            downloadService.startDownload(for: episode)
+        case .downloading:
+            downloadService.cancelDownload(for: episode)
+        case .downloaded:
+            break
+        }
+    }
+    
+    func deleteEpisode(_ episode: Episode) {
+        downloadService.deleteLocalFile(for: episode)
+    }
+    
+    private func getPlayableURL(for episode: Episode) -> URL? {
+        if let local = downloadService.hasLocalFile(for: episode) { return local }
+        if let remote = episode.streamUrl { return remote }
+        return nil
+    }
+    
     // MARK: - Private Setup & Helpers
     private func setupAudioObserver() {
         audioPlayerService.playerStatePublisher
             .receive(on: DispatchQueue.main)
             .map { state -> Bool in
-                if case .playing = state {
-                    return true
-                }
+                if case .playing = state { return true }
                 return false
             }
             .assign(to: \.isPlaying, on: self)

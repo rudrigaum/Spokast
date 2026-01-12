@@ -78,7 +78,6 @@ final class MainTabBarController: UITabBarController {
     
     private func presentPlayer() {
         guard let currentEpisode = AudioPlayerService.shared.currentEpisode else {
-            print("⚠️ Nenhum episódio selecionado no AudioService")
             return
         }
         

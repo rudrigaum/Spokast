@@ -130,6 +130,12 @@ final class PlayerView: UIView {
         return button
     }()
     
+    let downloadButton: DownloadButton = {
+        let button = DownloadButton()
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
+    
     private lazy var controlsStackView: UIStackView = {
         let stack = UIStackView(arrangedSubviews: [rewindButton, playPauseButton, forwardButton])
         stack.translatesAutoresizingMaskIntoConstraints = false
@@ -140,11 +146,15 @@ final class PlayerView: UIView {
         return stack
     }()
     
-    private lazy var speedContainerView: UIView = {
-        let view = UIView()
-        view.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(speedButton)
-        return view
+    private lazy var buttomStackView: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [speedButton, downloadButton])
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        stack.axis = .horizontal
+        stack.alignment = .center
+        stack.distribution = .equalCentering
+        stack.isLayoutMarginsRelativeArrangement = true
+        stack.layoutMargins = UIEdgeInsets(top: 0, left: 40, bottom: 0, right: 40)
+        return stack
     }()
 
     private lazy var mainStackView: UIStackView = {
@@ -155,7 +165,7 @@ final class PlayerView: UIView {
             progressSlider,
             timeStackView,
             controlsStackView,
-            speedContainerView
+            buttomStackView
         ])
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.axis = .vertical
@@ -203,11 +213,11 @@ final class PlayerView: UIView {
             
             coverContainerView.heightAnchor.constraint(equalTo: coverContainerView.widthAnchor),
             
-            speedButton.centerXAnchor.constraint(equalTo: speedContainerView.centerXAnchor),
-            speedButton.topAnchor.constraint(equalTo: speedContainerView.topAnchor),
-            speedButton.bottomAnchor.constraint(equalTo: speedContainerView.bottomAnchor),
             speedButton.heightAnchor.constraint(equalToConstant: 36),
             speedButton.widthAnchor.constraint(equalToConstant: 100),
+            
+            downloadButton.heightAnchor.constraint(equalToConstant: 36),
+            downloadButton.widthAnchor.constraint(equalToConstant: 100),
             
             coverImageView.topAnchor.constraint(equalTo: coverContainerView.topAnchor),
             coverImageView.leadingAnchor.constraint(equalTo: coverContainerView.leadingAnchor),
