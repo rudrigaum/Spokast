@@ -34,6 +34,10 @@ final class PlayerViewModel {
     @Published private(set) var durationText: String = "00:00"
     @Published var playbackSpeedLabel: String = "1.0x"
     @Published var downloadState: DownloadButton.State = .notDownloaded
+    
+    var currentEpisode: Episode? {
+        return audioPlayerService.currentEpisode
+    }
 
     
     // MARK: - Initialization
@@ -186,12 +190,10 @@ final class PlayerViewModel {
     
     private func getPlayableURL() -> URL? {
         if let localURL = downloadService.hasLocalFile(for: episode) {
-            print("🎧 Playing from LOCAL FILE: \(localURL.lastPathComponent)")
             return localURL
         }
         
         if let remoteURL = episode.streamUrl {
-            print("📡 Playing from REMOTE STREAM")
             return remoteURL
         }
         

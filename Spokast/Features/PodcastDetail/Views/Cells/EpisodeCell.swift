@@ -15,6 +15,7 @@ final class EpisodeCell: UITableViewCell {
     
     // MARK: - Actions
     var onPlayTap: (() -> Void)?
+    var didTapDownloadAction: (() -> Void)?
     
     // MARK: - UI Components
     private lazy var artworkContainer: UIView = {
@@ -68,6 +69,13 @@ final class EpisodeCell: UITableViewCell {
         return label
     }()
     
+    let downloadButton: DownloadButton = {
+        let button = DownloadButton()
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
+        return button
+    }()
+    
     private lazy var textStackView: UIStackView = {
         let stack = UIStackView(arrangedSubviews: [titleLabel, descriptionLabel])
         stack.translatesAutoresizingMaskIntoConstraints = false
@@ -82,6 +90,7 @@ final class EpisodeCell: UITableViewCell {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         setupUI()
         setupGestures()
+        setupActions()
     }
     
     @available(*, unavailable)
@@ -94,10 +103,12 @@ final class EpisodeCell: UITableViewCell {
         super.prepareForReuse()
         artworkImageView.kf.cancelDownloadTask()
         artworkImageView.image = nil
+        didTapDownloadAction = nil
+        downloadButton.updateState(.notDownloaded)
     }
     
     // MARK: - Configuration
-    func configure(with episode: Episode, podcastArtURL: URL?, isPlaying: Bool) {
+    func configure(with episode: Episode, downloadStatus: DownloadButton.State,  podcastArtURL: URL?, isPlaying: Bool) {
         titleLabel.text = episode.trackName
         
         let dateFormatter = DateFormatter()
@@ -116,6 +127,7 @@ final class EpisodeCell: UITableViewCell {
         )
         
         updatePlaybackState(isPlaying: isPlaying)
+        downloadButton.updateState(downloadStatus)
     }
     
     // MARK: - Helpers
@@ -145,6 +157,11 @@ final class EpisodeCell: UITableViewCell {
     private func setupGestures() {
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(didTapPlayContainer))
         artworkContainer.addGestureRecognizer(tapGesture)
+        artworkContainer.isUserInteractionEnabled = true
+    }
+    
+    private func setupActions() {
+        downloadButton.addTarget(self, action: #selector(didTapDownload), for: .touchUpInside)
     }
     
     @objc private func didTapPlayContainer() {
@@ -158,6 +175,10 @@ final class EpisodeCell: UITableViewCell {
         onPlayTap?()
     }
     
+    @objc private func didTapDownload() {
+        didTapDownloadAction?()
+    }
+    
     // MARK: - UI Setup
     private func setupUI() {
         backgroundColor = .systemBackground
@@ -169,6 +190,7 @@ final class EpisodeCell: UITableViewCell {
         artworkContainer.addSubview(playImageView)
         
         contentView.addSubview(textStackView)
+        contentView.addSubview(downloadButton)
         
         NSLayoutConstraint.activate([
             artworkContainer.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
@@ -192,10 +214,15 @@ final class EpisodeCell: UITableViewCell {
             playImageView.widthAnchor.constraint(equalToConstant: 24),
             
             textStackView.leadingAnchor.constraint(equalTo: artworkContainer.trailingAnchor, constant: 16),
-            textStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            textStackView.trailingAnchor.constraint(equalTo: downloadButton.leadingAnchor, constant: -16),
             textStackView.centerYAnchor.constraint(equalTo: artworkContainer.centerYAnchor),
             textStackView.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor, constant: 10),
-            textStackView.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -10)
+            textStackView.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -10),
+            
+            downloadButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
+            downloadButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            downloadButton.heightAnchor.constraint(equalToConstant: 32),
+            downloadButton.widthAnchor.constraint(equalToConstant: 32),
         ])
     }
 }

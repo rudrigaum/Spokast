@@ -38,7 +38,6 @@ final class DownloadService: NSObject, DownloadServiceProtocol {
             let localUrl = localFilePath(for: url)
             if fileManager.fileExists(atPath: localUrl.path) {
                 currentStatus[url] = .downloaded(localURL: localUrl)
-                print("♻️ Restored download: \(url.lastPathComponent)")
             } else {
                 persistence.removeDownloadedEpisode(url)
             }
@@ -86,7 +85,6 @@ final class DownloadService: NSObject, DownloadServiceProtocol {
         do {
             if fileManager.fileExists(atPath: localURL.path) {
                 try fileManager.removeItem(at: localURL)
-                print("🗑️ Deleted local file: \(localURL.lastPathComponent)")
             }
             persistence.removeDownloadedEpisode(url)
             updateStatus(.notDownloaded, for: url)
@@ -104,12 +102,18 @@ final class DownloadService: NSObject, DownloadServiceProtocol {
     
     private func localFilePath(for url: URL) -> URL {
         let documentsPath = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        return documentsPath.appendingPathComponent(url.lastPathComponent)
+        let safeFileName = url.absoluteString
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .joined(separator: "_")
+        
+        let maxLength = 200
+        let truncatedName = String(safeFileName.suffix(maxLength))
+        
+        return documentsPath.appendingPathComponent("\(truncatedName).mp3")
     }
 }
 
 // MARK: - URLSessionDownloadDelegate
-
 extension DownloadService: URLSessionDownloadDelegate {
     
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
@@ -126,14 +130,12 @@ extension DownloadService: URLSessionDownloadDelegate {
             try? fileManager.removeItem(at: destinationURL)
             try fileManager.moveItem(at: location, to: destinationURL)
             
-            print("✅ Download finished: \(destinationURL.lastPathComponent)")
             activeTasks[sourceURL] = nil
         
             persistence.saveDownloadedEpisode(sourceURL)
             updateStatus(.downloaded(localURL: destinationURL), for: sourceURL)
             
         } catch {
-            print("❌ File Move Error: \(error)")
             updateStatus(.failed(error: error), for: sourceURL)
         }
     }
@@ -147,7 +149,6 @@ extension DownloadService: URLSessionDownloadDelegate {
             if (error as NSError).code == NSURLErrorCancelled {
                 updateStatus(.notDownloaded, for: url)
             } else {
-                print("❌ Download Error: \(error.localizedDescription)")
                 updateStatus(.failed(error: error), for: url)
             }
         }

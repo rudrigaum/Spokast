@@ -181,7 +181,6 @@ final class AudioPlayerService: AudioPlayerServiceProtocol {
         
         do {
             try persistence.save(checkpoint: checkpoint)
-            print("💾 Checkpoint saved at \(Int(currentTime))s")
         } catch {
             print("❌ Failed to save checkpoint: \(error)")
         }
@@ -190,11 +189,8 @@ final class AudioPlayerService: AudioPlayerServiceProtocol {
     // MARK: - Restoration Logic
     func restoreLastState() {
         guard let checkpoint = persistence.load() else {
-            print("💾 No playback checkpoint found.")
             return
         }
-        
-        print("💾 Restoring checkpoint: \(checkpoint.podcastTitle) at \(Int(checkpoint.timestamp))s")
         
         self.currentEpisode = checkpoint.episode
         self.currentPodcastImageURL = checkpoint.podcastArtWorkURL

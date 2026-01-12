@@ -75,7 +75,11 @@ final class PlayerViewController: UIViewController {
     
     @objc private func didTapDownload() {
         if case .downloaded = viewModel.downloadState {
-            showDeleteConfirmation()
+            if let episode = viewModel.currentEpisode {
+                presentDeleteConfirmation(for: episode, sourceView: customView?.downloadButton) { [weak self] in
+                    self?.viewModel.deleteDownloadedEpisode()
+                }
+            }
         } else {
             viewModel.didTapDownload()
         }
@@ -165,29 +169,5 @@ final class PlayerViewController: UIViewController {
                 view?.downloadButton.updateState(state)
             }
             .store(in: &cancellables)
-    }
-    
-    private func showDeleteConfirmation() {
-        let alert = UIAlertController(
-            title: "Remove Download",
-            message: "Do you want to remove this episode from your device?",
-            preferredStyle: .actionSheet
-        )
-        
-        let deleteAction = UIAlertAction(title: "Remove Download", style: .destructive) { [weak self] _ in
-            self?.viewModel.deleteDownloadedEpisode()
-        }
-        
-        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
-        
-        alert.addAction(deleteAction)
-        alert.addAction(cancelAction)
-        
-        if let popover = alert.popoverPresentationController, let customView = customView {
-            popover.sourceView = customView.downloadButton
-            popover.sourceRect = customView.downloadButton.bounds
-        }
-        
-        present(alert, animated: true)
     }
 }

@@ -92,6 +92,7 @@ final class PodcastDetailViewController: UIViewController {
         bindErrors()
         bindPlayerState()
         bindSubscriptionState()
+        bindDownloads()
     }
     
     private func bindEpisodes() {
@@ -137,6 +138,33 @@ final class PodcastDetailViewController: UIViewController {
             .store(in: &cancellables)
     }
     
+    private func bindDownloads() {
+        viewModel.$onDownloadsUpdate
+            .receive(on: DispatchQueue.main)
+            .compactMap { $0 }
+            .sink { [weak self] _ in
+                self?.updateVisibleCellsDownloadState()
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func updateVisibleCellsDownloadState() {
+        guard let visiblePaths = customView?.tableView.indexPathsForVisibleRows else { return }
+        
+        for indexPath in visiblePaths {
+            guard indexPath.row < viewModel.episodes.count else { continue }
+            
+            let episode = viewModel.episodes[indexPath.row]
+            let status = viewModel.getDownloadStatus(for: episode)
+            
+            if let cell = customView?.tableView.cellForRow(at: indexPath) as? EpisodeCell {
+                cell.downloadButton.updateState(status)
+            }
+        }
+    }
+    
+    
+    
     private func updateVisibleCells(playingId: Int?, isPaused: Bool) {
         guard let visibleRows = customView?.tableView.indexPathsForVisibleRows else { return }
         
@@ -150,6 +178,30 @@ final class PodcastDetailViewController: UIViewController {
                 cell.updatePlaybackState(isPlaying: false)
             }
         }
+    }
+    
+    // MARK: - Download Actions
+    private func handleDownloadTap(for episode: Episode) {
+        let status = viewModel.getDownloadStatus(for: episode)
+        
+        if case .downloaded = status {
+            let cell = getCell(for: episode)
+            let sourceButton = cell?.downloadButton
+            
+            presentDeleteConfirmation(for: episode, sourceView: sourceButton) { [weak self] in
+                self?.viewModel.deleteEpisode(episode)
+            }
+            
+        } else {
+            viewModel.toggleDownload(for: episode)
+            updateVisibleCellsDownloadState()
+        }
+    }
+    
+    private func getCell(for episode: Episode) -> EpisodeCell? {
+        guard let index = viewModel.episodes.firstIndex(where: { $0.id == episode.id }) else { return nil }
+        let indexPath = IndexPath(row: index, section: 0)
+        return customView?.tableView.cellForRow(at: indexPath) as? EpisodeCell
     }
 }
 
@@ -166,20 +218,24 @@ extension PodcastDetailViewController: UITableViewDataSource {
         }
         
         let episode = viewModel.episodes[indexPath.row]
-        
         let podcastArtString = viewModel.podcast.artworkUrl600 ?? viewModel.podcast.artworkUrl100
         let podcastArtURL = URL(string: podcastArtString)
         let isPlayingThisEpisode = viewModel.isPlaying && (viewModel.currentPlayingID == episode.id)
+        let downloadStatus = viewModel.getDownloadStatus(for: episode)
         
-
         cell.configure(
             with: episode,
+            downloadStatus: downloadStatus,
             podcastArtURL: podcastArtURL,
             isPlaying: isPlayingThisEpisode
         )
         
         cell.onPlayTap = { [weak self] in
             self?.viewModel.playEpisode(at: indexPath.row)
+        }
+        
+        cell.didTapDownloadAction = { [weak self] in
+            self?.handleDownloadTap(for: episode)
         }
         
         return cell
