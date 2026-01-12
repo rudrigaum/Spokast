@@ -17,4 +17,5 @@ enum APIError: Error {
 protocol APIServiceProtocol {
     func fetchPodcasts(searchTerm: String, limit: Int) async throws -> [Podcast]
     func fetchEpisodes(for podcastId: Int) async throws -> [Episode]
+    func fetchPodcastDetails(id: Int) async throws -> Podcast
 }

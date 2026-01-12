@@ -97,4 +97,36 @@ extension APIService {
             throw APIError.decodingError(error)
         }
     }
+    
+    func fetchPodcastDetails(id: Int) async throws -> Podcast {
+        var components = URLComponents(string: "https://itunes.apple.com/lookup")
+        components?.queryItems = [
+            URLQueryItem(name: "id", value: "\(id)")
+        ]
+        
+        guard let url = components?.url else {
+            throw APIError.invalidURL
+        }
+        
+        do {
+            let (data, response) = try await URLSession.shared.data(from: url)
+            
+            guard let httpResponse = response as? HTTPURLResponse,
+                  (200...299).contains(httpResponse.statusCode) else {
+                throw APIError.invalidResponse
+            }
+            
+            let decoder = JSONDecoder()
+            let lookupResult = try decoder.decode(SearchResult.self, from: data)
+            
+            guard let podcast = lookupResult.results.first else {
+                throw APIError.decodingError(NSError(domain: "PodcastNotFound", code: 404, userInfo: nil))
+            }
+            
+            return podcast
+            
+        } catch {
+            throw APIError.requestFailed(error)
+        }
+    }
 }
