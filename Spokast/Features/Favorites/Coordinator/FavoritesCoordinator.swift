@@ -26,15 +26,8 @@ final class FavoritesCoordinator: Coordinator {
 
 extension FavoritesCoordinator: PodcastSelectionDelegate {
     func didSelectPodcast(_ podcast: Podcast) {
-        let service = APIService()
         let favoritesRepository = FavoritesRepository()
-        
-        let detailViewModel = PodcastDetailViewModel(
-            podcast: podcast,
-            service: service,
-            favoritesRepository: favoritesRepository
-        )
-        
+        let detailViewModel = PodcastDetailViewModel(podcast: podcast, favoritesRepository: favoritesRepository)
         let detailVC = PodcastDetailViewController(viewModel: detailViewModel)
         detailVC.coordinator = self
         navigationController.pushViewController(detailVC, animated: true)

@@ -32,6 +32,7 @@ final class EpisodeCell: UITableViewCell {
         let imageView = UIImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.contentMode = .scaleAspectFill
+        imageView.isUserInteractionEnabled = false
         return imageView
     }()
     
@@ -39,6 +40,7 @@ final class EpisodeCell: UITableViewCell {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.backgroundColor = .black.withAlphaComponent(0.4)
+        view.isUserInteractionEnabled = false
         return view
     }()
     
@@ -48,6 +50,7 @@ final class EpisodeCell: UITableViewCell {
         imageView.image = UIImage(systemName: "play.fill")
         imageView.tintColor = .white
         imageView.contentMode = .scaleAspectFit
+        imageView.isUserInteractionEnabled = false
         return imageView
     }()
     
@@ -85,6 +88,12 @@ final class EpisodeCell: UITableViewCell {
         return stack
     }()
     
+    private static let releaseDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d, yyyy"
+        return formatter
+    }()
+    
     // MARK: - Initialization
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -103,28 +112,48 @@ final class EpisodeCell: UITableViewCell {
         super.prepareForReuse()
         artworkImageView.kf.cancelDownloadTask()
         artworkImageView.image = nil
+        titleLabel.text = nil
+        descriptionLabel.text = nil
         didTapDownloadAction = nil
         downloadButton.updateState(.notDownloaded)
     }
     
     // MARK: - Configuration
-    func configure(with episode: Episode, downloadStatus: DownloadButton.State,  podcastArtURL: URL?, isPlaying: Bool) {
+    func configure(with episode: Episode, downloadStatus: DownloadButton.State, podcastArtURL: URL?, isPlaying: Bool) {
         titleLabel.text = episode.trackName
         
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "MMM d, yyyy"
-        let dateString = dateFormatter.string(from: episode.releaseDate)
+        let dateString = EpisodeCell.releaseDateFormatter.string(from: episode.releaseDate)
         let durationText = formatDuration(millis: episode.trackTimeMillis)
-        
         descriptionLabel.text = "\(dateString) • \(durationText)"
+
+        let episodeURLString = episode.artworkUrl160 ?? episode.artworkUrl600
+        let finalURL: URL?
         
-        let episodeURL = URL(string: episode.artworkUrl160 ?? episode.artworkUrl600 ?? "")
-        let finalURL = episodeURL ?? podcastArtURL
+        if let episodeString = episodeURLString, let url = URL(string: episodeString) {
+            finalURL = url
+        } else {
+            finalURL = podcastArtURL
+        }
         
-        artworkImageView.kf.setImage(
-            with: finalURL,
-            placeholder: UIImage(systemName: "photo")
-        )
+        if let url = finalURL {
+            let scale = UIScreen.main.scale
+            let targetSize = CGSize(width: 80 * scale, height: 80 * scale)
+            
+            let processor = DownsamplingImageProcessor(size: targetSize)
+            
+            artworkImageView.kf.setImage(
+                with: url,
+                placeholder: UIImage(systemName: "photo"),
+                options: [
+                    .processor(processor),
+                    .scaleFactor(scale),
+                    .transition(.fade(0.2)),
+                    .cacheOriginalImage
+                ]
+            )
+        } else {
+            artworkImageView.image = UIImage(systemName: "photo")
+        }
         
         updatePlaybackState(isPlaying: isPlaying)
         downloadButton.updateState(downloadStatus)

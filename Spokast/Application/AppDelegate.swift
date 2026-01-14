@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import Kingfisher
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -13,7 +14,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        setupImageCache()
         return true
     }
 
@@ -31,6 +32,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Use this method to release any resources that were specific to the discarded scenes, as they will not return.
     }
 
+    func setupImageCache() {
+        ImageCache.default.memoryStorage.config.totalCostLimit = 50 * 1024 * 1024
+        ImageCache.default.memoryStorage.config.countLimit = 50
+        ImageCache.default.memoryStorage.config.expiration = .seconds(300)
+    }
 
 }
 
