@@ -56,6 +56,13 @@ final class PodcastDetailViewController: UIViewController {
         viewModel.fetchEpisodes()
     }
     
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        if self.isMovingFromParent {
+            KingfisherManager.shared.cache.clearMemoryCache()
+        }
+    }
+    
     // MARK: - Configuration
     private func setupConfiguration() {
         guard let customView = customView else { return }
@@ -119,12 +126,17 @@ final class PodcastDetailViewController: UIViewController {
     }
     
     private func bindPlayerState() {
-        Publishers.CombineLatest(viewModel.$currentPlayingID, viewModel.$isPlaying)
+        viewModel.$currentPlayingID
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] (playingId, isPlaying) in
-                guard let self = self else { return }
-                
-                self.customView?.tableView.reloadData()
+            .sink { [weak self] playingId in
+                self?.updateVisibleCells(playingId: playingId, isPlaying: self?.viewModel.isPlaying ?? false)
+            }
+            .store(in: &cancellables)
+        
+        viewModel.$isPlaying
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isPlaying in
+                self?.updateVisibleCells(playingId: self?.viewModel.currentPlayingID, isPlaying: isPlaying)
             }
             .store(in: &cancellables)
     }
@@ -165,17 +177,20 @@ final class PodcastDetailViewController: UIViewController {
     
     
     
-    private func updateVisibleCells(playingId: Int?, isPaused: Bool) {
+    private func updateVisibleCells(playingId: Int?, isPlaying: Bool) {
         guard let visibleRows = customView?.tableView.indexPathsForVisibleRows else { return }
         
         for indexPath in visibleRows {
             guard let cell = customView?.tableView.cellForRow(at: indexPath) as? EpisodeCell else { continue }
-            let episode = viewModel.episodes[indexPath.row]
             
-            if episode.trackId == playingId {
-                cell.updatePlaybackState(isPlaying: !isPaused)
-            } else {
-                cell.updatePlaybackState(isPlaying: false)
+            if indexPath.row < viewModel.episodes.count {
+                let episode = viewModel.episodes[indexPath.row]
+                
+                if episode.id == playingId {
+                    cell.updatePlaybackState(isPlaying: isPlaying)
+                } else {
+                    cell.updatePlaybackState(isPlaying: false)
+                }
             }
         }
     }

@@ -35,7 +35,7 @@ final class PodcastRepository: PodcastRepositoryProtocol {
         let episodes = try await rssParser.parse(feedURL: feedUrl)
         
         let enrichedEpisodes = episodes.map { episode -> Episode in
-            var mutableEpisode = episode
+            let mutableEpisode = episode
             if mutableEpisode.artworkUrl600 == nil {
                 return Episode(
                     trackId: episode.trackId,

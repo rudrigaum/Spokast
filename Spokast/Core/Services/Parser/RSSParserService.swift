@@ -27,6 +27,25 @@ final class RSSParserService: NSObject, RSSParserServiceProtocol {
     private var currentImage: String = ""
     private var isInsideItem = false
     private var continuation: CheckedContinuation<[Episode], Error>?
+    private lazy var dateFormats: [DateFormatter] = {
+        let locales = ["en_US_POSIX", "en_US"]
+        let formats = [
+            "EEE, dd MMM yyyy HH:mm:ss Z",
+            "EEE, dd MMM yyyy HH:mm:ss zzz",
+            "dd MMM yyyy HH:mm:ss Z",
+            "yyyy-MM-dd HH:mm:ss"
+        ]
+        
+        var formatters: [DateFormatter] = []
+        
+        for format in formats {
+            let formatter = DateFormatter()
+            formatter.dateFormat = format
+            formatter.locale = Locale(identifier: "en_US_POSIX")
+            formatters.append(formatter)
+        }
+        return formatters
+    }()
     
     // MARK: - Public API
     func parse(feedURL: URL) async throws -> [Episode] {
@@ -139,17 +158,13 @@ extension RSSParserService: XMLParserDelegate {
     // MARK: - Helper Construction
     private func makeEpisode() -> Episode {
         let cleanTitle = currentTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-            .replacingOccurrences(of: "\n", with: "")
-        
+            .replacingOccurrences(of: "\n", with: " ")
+            .replacingOccurrences(of: "  ", with: " ")
         let cleanDesc = currentDescription.trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEE, dd MMM yyyy HH:mm:ss Z"
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        let date = formatter.date(from: currentPubDate) ?? Date()
-        
-        let uniqueID = abs(currentStreamUrl.hashValue)
-        
+            .replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression, range: nil)
+        let cleanDateString = currentPubDate.trimmingCharacters(in: .whitespacesAndNewlines)
+        let date = parseDate(from: cleanDateString)
+        let uniqueID = currentStreamUrl.deterministicHash
         let durationMillis = parseDuration(currentDuration)
         
         return Episode(
@@ -158,7 +173,7 @@ extension RSSParserService: XMLParserDelegate {
             description: cleanDesc,
             releaseDate: date,
             trackTimeMillis: durationMillis,
-            previewUrl: nil,
+            previewUrl: currentStreamUrl,
             episodeUrl: currentStreamUrl,
             artworkUrl160: nil,
             collectionName: nil,
@@ -168,8 +183,18 @@ extension RSSParserService: XMLParserDelegate {
         )
     }
     
+    private func parseDate(from string: String) -> Date {
+        for formatter in dateFormats {
+            if let date = formatter.date(from: string) {
+                return date
+            }
+        }
+        return Date()
+    }
+    
     private func parseDuration(_ durationString: String) -> Int? {
-        let components = durationString.components(separatedBy: ":")
+        let cleanString = durationString.trimmingCharacters(in: .whitespacesAndNewlines)
+        let components = cleanString.components(separatedBy: ":")
         var seconds = 0
         
         if components.count == 3 {
@@ -182,9 +207,19 @@ extension RSSParserService: XMLParserDelegate {
             let secs = Int(components[1]) ?? 0
             seconds = (minutes * 60) + secs
         } else {
-            seconds = Int(durationString) ?? 0
+            seconds = Int(cleanString) ?? 0
         }
         
         return seconds * 1000
+    }
+}
+
+extension String {
+    var deterministicHash: Int {
+        var hash = 5381
+        for char in self.utf8 {
+            hash = ((hash << 5) &+ hash) &+ Int(char)
+        }
+        return abs(hash)
     }
 }

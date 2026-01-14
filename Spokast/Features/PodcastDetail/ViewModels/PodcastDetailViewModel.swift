@@ -12,7 +12,7 @@ final class PodcastDetailViewModel {
     
     // MARK: - Properties
     let podcast: Podcast
-    private let service: APIService
+    private let repository: PodcastRepositoryProtocol
     private let audioPlayerService: AudioPlayerServiceProtocol
     private let favoritesRepository: FavoritesRepositoryProtocol
     private let downloadService: DownloadServiceProtocol
@@ -32,13 +32,13 @@ final class PodcastDetailViewModel {
     
     // MARK: - Initialization
     init(podcast: Podcast,
-         service: APIService,
+         repository: PodcastRepositoryProtocol = PodcastRepository(),
          favoritesRepository: FavoritesRepositoryProtocol,
          audioPlayerService: AudioPlayerServiceProtocol = AudioPlayerService.shared,
          downloadService: DownloadServiceProtocol = DownloadService()) {
         
         self.podcast = podcast
-        self.service = service
+        self.repository = repository
         self.favoritesRepository = favoritesRepository
         self.audioPlayerService = audioPlayerService
         self.downloadService = downloadService
@@ -66,14 +66,15 @@ final class PodcastDetailViewModel {
         
         Task {
             do {
-                let fetchedEpisodes = try await service.fetchEpisodes(for: id)
+                let fetchedEpisodes = try await repository.fetchEpisodes(for: id)
+                
                 await MainActor.run {
                     self.episodes = fetchedEpisodes
                 }
             } catch {
                 await MainActor.run {
                     self.errorMessage = "Could not load episodes."
-                    print("Error: \(error)")
+                    print("❌ Error fetching episodes via RSS: \(error)")
                 }
             }
         }
@@ -127,7 +128,7 @@ final class PodcastDetailViewModel {
             }
         }
         
-        if let localURL = downloadService.hasLocalFile(for: episode) {
+        if downloadService.hasLocalFile(for: episode) != nil {
             return .downloaded
         }
         
