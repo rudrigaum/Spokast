@@ -27,6 +27,15 @@ final class PodcastDetailViewController: UIViewController {
     private var cancellables = Set<AnyCancellable>()
     weak var coordinator: PodcastDetailCoordinatorDelegate?
     
+    private lazy var searchController: UISearchController = {
+        let search = UISearchController(searchResultsController: nil)
+        search.searchResultsUpdater = self
+        search.obscuresBackgroundDuringPresentation = false
+        search.searchBar.placeholder = "Search episodes"
+        search.hidesNavigationBarDuringPresentation = false 
+        return search
+    }()
+    
     // MARK: - Initialization
     init(viewModel: PodcastDetailViewModel) {
         self.viewModel = viewModel
@@ -52,6 +61,7 @@ final class PodcastDetailViewController: UIViewController {
         setupConfiguration()
         setupActions()
         setupBindings()
+        setupSearchController()
         
         viewModel.fetchEpisodes()
     }
@@ -81,6 +91,12 @@ final class PodcastDetailViewController: UIViewController {
         }
     }
     
+    private func setupSearchController() {
+        navigationItem.searchController = searchController
+        navigationItem.hidesSearchBarWhenScrolling = false
+        definesPresentationContext = true
+    }
+    
     // MARK: - Actions Setup
     private func setupActions() {
         customView?.subscribeButton.addTarget(self, action: #selector(didTapSubscribe), for: .touchUpInside)
@@ -106,10 +122,7 @@ final class PodcastDetailViewController: UIViewController {
         viewModel.$episodes
             .receive(on: DispatchQueue.main)
             .sink { [weak self] episodes in
-                guard let self = self else { return }
-                if !episodes.isEmpty {
-                    self.customView?.tableView.reloadData()
-                }
+                self?.customView?.tableView.reloadData()
             }
             .store(in: &cancellables)
     }
@@ -262,6 +275,7 @@ extension PodcastDetailViewController: UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
+        guard indexPath.row < viewModel.episodes.count else { return }
         let episode = viewModel.episodes[indexPath.row]
         coordinator?.showEpisodeDetails(episode, from: viewModel.podcast)
     }
@@ -278,5 +292,14 @@ extension PodcastDetailCoordinatorDelegate {
         let episodeDetailVC = EpisodeDetailViewController(viewModel: viewModel)
         
         navigationController.pushViewController(episodeDetailVC, animated: true)
+    }
+}
+
+// MARK: - UISearchResultsUpdating
+extension PodcastDetailViewController: UISearchResultsUpdating {
+
+    func updateSearchResults(for searchController: UISearchController) {
+        guard let text = searchController.searchBar.text else { return }
+        viewModel.filterEpisodes(with: text)
     }
 }

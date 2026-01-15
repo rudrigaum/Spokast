@@ -19,6 +19,7 @@ final class PodcastDetailViewModel {
 
     private var downloadStatuses: [URL: DownloadStatus] = [:]
     private var cancellables = Set<AnyCancellable>()
+    private var allEpisodes: [Episode] = []
     
     // MARK: - Outputs
     @Published private(set) var episodes: [Episode] = []
@@ -69,6 +70,7 @@ final class PodcastDetailViewModel {
                 let fetchedEpisodes = try await repository.fetchEpisodes(for: id)
                 
                 await MainActor.run {
+                    self.allEpisodes = fetchedEpisodes
                     self.episodes = fetchedEpisodes
                 }
             } catch {
@@ -76,6 +78,20 @@ final class PodcastDetailViewModel {
                     self.errorMessage = "Could not load episodes."
                     print("❌ Error fetching episodes via RSS: \(error)")
                 }
+            }
+        }
+    }
+    
+    // MARK: - Filtering Logic
+    func filterEpisodes(with query: String) {
+        if query.isEmpty {
+            self.episodes = self.allEpisodes
+        } else {
+            self.episodes = self.allEpisodes.filter { episode in
+                let matchesTitle = episode.trackName.localizedCaseInsensitiveContains(query)
+                let matchesDescription = episode.description?.localizedCaseInsensitiveContains(query) ?? false
+                
+                return matchesTitle || matchesDescription
             }
         }
     }
