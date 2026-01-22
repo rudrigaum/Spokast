@@ -8,6 +8,7 @@
 import Foundation
 import AVFoundation
 import Combine
+import MediaPlayer
 
 // MARK: - Enums & Protocols
 enum AudioPlayerState: Equatable {
@@ -35,14 +36,16 @@ protocol AudioPlayerServiceProtocol {
 }
 
 // MARK: - Service Implementation
-final class AudioPlayerService: AudioPlayerServiceProtocol {
+final class AudioPlayerService: NSObject, AudioPlayerServiceProtocol {
     
     static let shared = AudioPlayerService()
     
     // MARK: - Properties
     private var player: AVPlayer?
     private var timeObserverToken: Any?
+    private var durationObservation: NSKeyValueObservation?
     var persistence: PlaybackPersistenceProtocol = UserDefaultsPlaybackPersistence()
+    
     let playerStatePublisher = CurrentValueSubject<AudioPlayerState, Never>(.stopped)
     let progressPublisher = PassthroughSubject<(currentTime: Double, duration: Double), Never>()
     let currentEpisodePublisher = CurrentValueSubject<Episode?, Never>(nil)
@@ -54,8 +57,10 @@ final class AudioPlayerService: AudioPlayerServiceProtocol {
     var currentPodcastImageURL: URL?
     
     // MARK: - Initialization
-    private init() {
+    private override init() {
+        super.init()
         setupAudioSession()
+        setupRemoteCommands()
     }
     
     // MARK: - Main Methods
@@ -81,18 +86,21 @@ final class AudioPlayerService: AudioPlayerServiceProtocol {
         stop()
         
         let playerItem = AVPlayerItem(url: url)
+        setupDurationObserver(for: playerItem)
         player = AVPlayer(playerItem: playerItem)
         player?.play()
         
         setupPeriodicTimeObserver()
         playerStatePublisher.send(.playing(url: url))
+        player?.rate = playbackRatePublisher.value
+        updateNowPlayingInfo()
     }
     
     func setPlaybackRate(_ rate: Float) {
         playbackRatePublisher.send(rate)
-        
         if case .playing = playerStatePublisher.value {
             player?.rate = rate
+            updateNowPlayingInfo()
         }
     }
     
@@ -101,12 +109,15 @@ final class AudioPlayerService: AudioPlayerServiceProtocol {
         if case .playing(let url) = playerStatePublisher.value {
             playerStatePublisher.send(.paused(url: url))
             saveCurrentState()
+            updateNowPlayingInfo()
         }
     }
     
     func stop() {
         player?.pause()
         removePeriodicTimeObserver()
+        durationObservation?.invalidate()
+        durationObservation = nil
         player = nil
         playerStatePublisher.send(.stopped)
     }
@@ -125,18 +136,109 @@ final class AudioPlayerService: AudioPlayerServiceProtocol {
     func seek(to time: Double) {
         let cmTime = CMTime(seconds: time, preferredTimescale: 1000)
         player?.seek(to: cmTime)
+        updateNowPlayingInfo()
     }
     
-    // MARK: - Private Setup
+    // MARK: - Private Setup (Audio & Remote Commands) 🛠️
     private func setupAudioSession() {
         do {
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio, options: [])
             try AVAudioSession.sharedInstance().setActive(true)
         } catch {
             print("❌ AudioPlayerService Error: Failed to setup audio session: \(error)")
         }
     }
     
+    private func setupRemoteCommands() {
+        let commandCenter = MPRemoteCommandCenter.shared()
+        
+        commandCenter.playCommand.isEnabled = true
+        commandCenter.playCommand.addTarget { [weak self] _ in
+            guard let self = self else { return .commandFailed }
+            
+            if case .paused(let url) = self.playerStatePublisher.value {
+                self.play(url: url)
+                return .success
+            }
+            return .commandFailed
+        }
+        
+        commandCenter.pauseCommand.isEnabled = true
+        commandCenter.pauseCommand.addTarget { [weak self] _ in
+            self?.pause()
+            return .success
+        }
+        
+        commandCenter.skipBackwardCommand.preferredIntervals = [15]
+        commandCenter.skipBackwardCommand.addTarget { [weak self] event in
+            self?.seekRelative(by: -15)
+            return .success
+        }
+        
+        commandCenter.skipForwardCommand.preferredIntervals = [30]
+        commandCenter.skipForwardCommand.addTarget { [weak self] event in
+            self?.seekRelative(by: 30)
+            return .success
+        }
+        
+        commandCenter.changePlaybackPositionCommand.isEnabled = true
+        commandCenter.changePlaybackPositionCommand.addTarget { [weak self] event in
+            guard let event = event as? MPChangePlaybackPositionCommandEvent else { return .commandFailed }
+            self?.seek(to: event.positionTime)
+            return .success
+        }
+    }
+    
+    private func seekRelative(by seconds: Double) {
+        guard let player = player else { return }
+        let currentTime = player.currentTime().seconds
+        let newTime = currentTime + seconds
+        seek(to: newTime)
+    }
+    
+    // MARK: - Now Playing Info (Lock Screen)
+    private func updateNowPlayingInfo() {
+        guard let episode = currentEpisode, let player = player else {
+            MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
+            return
+        }
+        
+        var nowPlayingInfo = [String: Any]()
+        
+        nowPlayingInfo[MPMediaItemPropertyTitle] = episode.trackName
+        nowPlayingInfo[MPMediaItemPropertyArtist] = episode.collectionName ?? episode.artistName ?? "Spokast"
+        
+        let duration = player.currentItem?.duration.seconds
+        let safeDuration = (duration?.isFinite == true) ? duration! : 0.0
+        let currentTime = player.currentTime().seconds
+        let playbackRate = player.rate
+        
+        nowPlayingInfo[MPMediaItemPropertyPlaybackDuration] = NSNumber(value: safeDuration)
+        nowPlayingInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = NSNumber(value: currentTime)
+        nowPlayingInfo[MPNowPlayingInfoPropertyPlaybackRate] = NSNumber(value: playbackRate)
+        
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
+        
+        if let imageURL = currentPodcastImageURL {
+            
+            DispatchQueue.global().async {
+                if let data = try? Data(contentsOf: imageURL), let image = UIImage(data: data) {
+                    let artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in return image }
+                    
+                    DispatchQueue.main.async { [weak self] in
+                        guard let self = self, let player = self.player else { return }
+                        var currentInfo = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [String: Any]()
+                        currentInfo[MPMediaItemPropertyArtwork] = artwork
+                        currentInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = NSNumber(value: player.currentTime().seconds)
+                        currentInfo[MPNowPlayingInfoPropertyPlaybackRate] = NSNumber(value: player.rate)
+                        MPNowPlayingInfoCenter.default().nowPlayingInfo = currentInfo
+                    }
+                }
+            }
+        }
+    }
+    
+    // MARK: - Time Observer
     private func setupPeriodicTimeObserver() {
         guard let player = player else { return }
         let interval = CMTime(seconds: 0.5, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
@@ -146,7 +248,23 @@ final class AudioPlayerService: AudioPlayerServiceProtocol {
             
             let currentTime = time.seconds
             let duration = item.duration.seconds.isFinite ? item.duration.seconds : 0.0
+            
             self.progressPublisher.send((currentTime: currentTime, duration: duration))
+        }
+    }
+    
+    // MARK: - Duration Observer
+    private func setupDurationObserver(for item: AVPlayerItem) {
+        durationObservation?.invalidate()
+        
+        durationObservation = item.observe(\.duration, options: [.new]) { [weak self] item, _ in
+            let duration = item.duration.seconds
+            
+            if duration > 0 && duration.isFinite {
+                DispatchQueue.main.async {
+                    self?.updateNowPlayingInfo()
+                }
+            }
         }
     }
     
