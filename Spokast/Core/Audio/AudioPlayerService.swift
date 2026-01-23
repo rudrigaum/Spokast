@@ -17,6 +17,7 @@ enum AudioPlayerState: Equatable {
     case paused(url: URL)
 }
 
+@MainActor
 protocol AudioPlayerServiceProtocol {
     var playerStatePublisher: CurrentValueSubject<AudioPlayerState, Never> { get }
     var progressPublisher: PassthroughSubject<(currentTime: Double, duration: Double), Never> { get }
@@ -36,6 +37,7 @@ protocol AudioPlayerServiceProtocol {
 }
 
 // MARK: - Service Implementation
+@MainActor
 final class AudioPlayerService: NSObject, AudioPlayerServiceProtocol {
     
     static let shared = AudioPlayerService()
@@ -44,7 +46,7 @@ final class AudioPlayerService: NSObject, AudioPlayerServiceProtocol {
     private var player: AVPlayer?
     private var timeObserverToken: Any?
     private var durationObservation: NSKeyValueObservation?
-    var persistence: PlaybackPersistenceProtocol = UserDefaultsPlaybackPersistence()
+    var persistence: PlaybackPersistenceProtocol = SwiftDataPlaybackPersistence()
     
     let playerStatePublisher = CurrentValueSubject<AudioPlayerState, Never>(.stopped)
     let progressPublisher = PassthroughSubject<(currentTime: Double, duration: Double), Never>()
@@ -61,6 +63,10 @@ final class AudioPlayerService: NSObject, AudioPlayerServiceProtocol {
         super.init()
         setupAudioSession()
         setupRemoteCommands()
+        
+        Task {
+            restoreLastState()
+        }
     }
     
     // MARK: - Main Methods
@@ -244,12 +250,16 @@ final class AudioPlayerService: NSObject, AudioPlayerServiceProtocol {
         let interval = CMTime(seconds: 0.5, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
         
         timeObserverToken = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
-            guard let self = self, let item = self.player?.currentItem else { return }
-            
-            let currentTime = time.seconds
-            let duration = item.duration.seconds.isFinite ? item.duration.seconds : 0.0
-            
-            self.progressPublisher.send((currentTime: currentTime, duration: duration))
+            guard let self = self else { return }
+    
+            MainActor.assumeIsolated {
+                guard let item = self.player?.currentItem else { return }
+                
+                let currentTime = time.seconds
+                let duration = item.duration.seconds.isFinite ? item.duration.seconds : 0.0
+                
+                self.progressPublisher.send((currentTime: currentTime, duration: duration))
+            }
         }
     }
     

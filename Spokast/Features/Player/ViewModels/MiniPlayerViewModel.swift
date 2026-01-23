@@ -24,8 +24,8 @@ final class MiniPlayerViewModel {
     private var cancellables = Set<AnyCancellable>()
     
     // MARK: - Init
-    init(service: AudioPlayerService = .shared) {
-        self.service = service
+    init(service: AudioPlayerService? = nil) {
+        self.service = service ?? AudioPlayerService.shared
         setupBindings()
     }
     
@@ -47,7 +47,6 @@ final class MiniPlayerViewModel {
     
     private func bindPlayerState() {
         service.playerStatePublisher
-            .receive(on: DispatchQueue.main)
             .map { state -> Bool in
                 if case .playing = state { return true }
                 return false
@@ -58,7 +57,6 @@ final class MiniPlayerViewModel {
     
     private func bindEpisodeData() {
         service.currentEpisodePublisher
-            .receive(on: DispatchQueue.main)
             .sink { [weak self] episode in
                 self?.updatePlayerMetadata(with: episode)
             }

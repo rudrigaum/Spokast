@@ -15,6 +15,7 @@ struct PlaybackCheckpoint: Codable {
     let savedAt: Date
 }
 
+@MainActor
 protocol PlaybackPersistenceProtocol {
     func save(checkpoint: PlaybackCheckpoint) throws
     func load() -> PlaybackCheckpoint?
