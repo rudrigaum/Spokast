@@ -8,6 +8,7 @@
 import Foundation
 import Combine
 
+@MainActor
 final class PlayerViewModel {
     
     // MARK: - Dependencies
@@ -41,20 +42,23 @@ final class PlayerViewModel {
 
     
     // MARK: - Initialization
-    init(episode: Episode,
-         podcastImageURL: URL?,
-         audioService: AudioPlayerServiceProtocol = AudioPlayerService.shared,
-         favoritesRepository: FavoritesRepositoryProtocol, downloadService: DownloadServiceProtocol = DownloadService()) {
-        
+    init(
+        episode: Episode,
+        podcastImageURL: URL?,
+        audioService: AudioPlayerServiceProtocol? = nil,
+        favoritesRepository: FavoritesRepositoryProtocol,
+        downloadService: DownloadServiceProtocol? = nil
+    ) {
         self.episode = episode
         self.podcastImageURL = podcastImageURL
-        self.audioPlayerService = audioService
         self.favoritesRepository = favoritesRepository
+        
+        self.audioPlayerService = audioService ?? AudioPlayerService.shared
+        self.downloadService = downloadService ?? DownloadService()
         
         self.title = episode.trackName
         self.artist = episode.collectionName ?? "Podcast"
         self.coverURL = podcastImageURL
-        self.downloadService = downloadService
         
         setupBindings()
         checkFavoriteStatus()

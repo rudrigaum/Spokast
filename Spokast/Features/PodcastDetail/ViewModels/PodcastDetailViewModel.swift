@@ -8,6 +8,7 @@
 import Foundation
 import Combine
 
+@MainActor
 final class PodcastDetailViewModel {
     
     // MARK: - Properties
@@ -32,17 +33,19 @@ final class PodcastDetailViewModel {
     @Published var onDownloadsUpdate: Void?
     
     // MARK: - Initialization
-    init(podcast: Podcast,
-         repository: PodcastRepositoryProtocol = PodcastRepository(),
-         favoritesRepository: FavoritesRepositoryProtocol,
-         audioPlayerService: AudioPlayerServiceProtocol = AudioPlayerService.shared,
-         downloadService: DownloadServiceProtocol = DownloadService()) {
+    init(
+        podcast: Podcast,
+        repository: PodcastRepositoryProtocol = PodcastRepository(),
+        favoritesRepository: FavoritesRepositoryProtocol,
+        audioPlayerService: AudioPlayerServiceProtocol? = nil, // 👈 Mudança aqui
+        downloadService: DownloadServiceProtocol = DownloadService()
+    ) {
         
         self.podcast = podcast
         self.repository = repository
         self.favoritesRepository = favoritesRepository
-        self.audioPlayerService = audioPlayerService
         self.downloadService = downloadService
+        self.audioPlayerService = audioPlayerService ?? AudioPlayerService.shared
         
         setupAudioObserver()
         checkFavoriteStatus()
