@@ -26,8 +26,9 @@ final class AppCoordinator: Coordinator {
         let homeNav = makeHomeFlow()
         let searchNav = makeSearchFlow()
         let favNav = makeFavoritesFlow()
+        let profileNav = makeProfileFlow()
         
-        let viewControllers = [homeNav, searchNav, favNav]
+        let viewControllers = [homeNav, searchNav, favNav, profileNav]
         let mainTabBar = MainTabBarController(viewControllers: viewControllers)
         
         window.rootViewController = mainTabBar
@@ -74,6 +75,22 @@ final class AppCoordinator: Coordinator {
         )
         
         let coordinator = FavoritesCoordinator(navigationController: navController)
+        childCoordinators.append(coordinator)
+        coordinator.start()
+        
+        return navController
+    }
+    
+    private func makeProfileFlow() -> UINavigationController {
+        let navController = UINavigationController()
+        
+        navController.tabBarItem = UITabBarItem(
+            title: "Profile",
+            image: UIImage(systemName: "person.circle"),
+            selectedImage: UIImage(systemName: "person.circle.fill")
+        )
+        
+        let coordinator = ProfileCoordinator(navigationController: navController)
         childCoordinators.append(coordinator)
         coordinator.start()
         
