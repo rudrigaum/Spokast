@@ -10,19 +10,11 @@ import SwiftData
 
 @MainActor
 final class SwiftDataPlaybackPersistence: PlaybackPersistenceProtocol {
-
-    private let container: ModelContainer
+    
     private let context: ModelContext
     
     init() {
-        do {
-            let schema = Schema([EpisodeProgress.self])
-            let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-            self.container = try ModelContainer(for: schema, configurations: [modelConfiguration])
-            self.context = container.mainContext
-        } catch {
-            fatalError("❌ Failed to initialize SwiftData container: \(error)")
-        }
+        self.context = DatabaseService.shared.context
     }
     
     // MARK: - Save (Upsert Logic)
