@@ -31,7 +31,7 @@ final class FavoritesView: UIView {
     
     private let emptyLabel: UILabel = {
         let label = UILabel()
-        label.text = "You haven't followed any podcasts yet.\nGo explore!"
+        label.text = "Your library is empty.\nImport an OPML file in Profile."
         label.textColor = .secondaryLabel
         label.textAlignment = .center
         label.numberOfLines = 0
@@ -64,11 +64,18 @@ final class FavoritesView: UIView {
             activityIndicator.stopAnimating()
             tableView.isHidden = true
             emptyLabel.isHidden = false
+            emptyLabel.text = "Your library is empty.\nImport an OPML file in Profile."
             
-        case .content:
+        case .loaded:
             activityIndicator.stopAnimating()
             tableView.isHidden = false
             emptyLabel.isHidden = true
+            
+        case .error(let message):
+            activityIndicator.stopAnimating()
+            tableView.isHidden = true
+            emptyLabel.isHidden = false
+            emptyLabel.text = message
         }
     }
     

@@ -83,11 +83,11 @@ final class FavoriteCell: UITableViewCell {
     }
     
     // MARK: - Configuration
-    func configure(with podcast: FavoritePodcast) {
-        titleLabel.text = podcast.title
-        authorLabel.text = podcast.author
+    func configure(with podcast: SavedPodcast) {
+        titleLabel.text = podcast.collectionName
+        authorLabel.text = podcast.artistName
         
-        if let urlString = podcast.coverUrl, let url = URL(string: urlString) {
+        if let urlString = podcast.artworkUrl600, let url = URL(string: urlString) {
             
             let processor = DownsamplingImageProcessor(size: CGSize(width: 60, height: 60))
             

@@ -8,7 +8,9 @@
 import Foundation
 import UIKit
 
+@MainActor
 final class FavoritesCoordinator: Coordinator {
+    
     var navigationController: UINavigationController
     
     init(navigationController: UINavigationController) {
@@ -16,22 +18,25 @@ final class FavoritesCoordinator: Coordinator {
     }
     
     func start() {
-        let repository = FavoritesRepository()
-        let viewModel = FavoritesViewModel(repository: repository)
+        let viewModel = FavoritesViewModel()
         let viewController = FavoritesViewController(viewModel: viewModel)
         viewController.coordinator = self
+        viewController.title = "Library"
         navigationController.pushViewController(viewController, animated: false)
     }
 }
 
+// MARK: - Navigation Delegate
 extension FavoritesCoordinator: PodcastSelectionDelegate {
+    
     func didSelectPodcast(_ podcast: Podcast) {
-        let favoritesRepository = FavoritesRepository()
-        let detailViewModel = PodcastDetailViewModel(podcast: podcast, favoritesRepository: favoritesRepository)
+        let legacyRepository = FavoritesRepository()
+        let detailViewModel = PodcastDetailViewModel(podcast: podcast, favoritesRepository: legacyRepository)
         let detailVC = PodcastDetailViewController(viewModel: detailViewModel)
         detailVC.coordinator = self
         navigationController.pushViewController(detailVC, animated: true)
     }
 }
+
 
 extension FavoritesCoordinator: PodcastDetailCoordinatorDelegate {}

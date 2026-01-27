@@ -10,6 +10,7 @@ import UIKit
 import Kingfisher
 import Combine
 
+@MainActor
 protocol PodcastDetailCoordinatorDelegate: AnyObject {
     var navigationController: UINavigationController { get }
     func showEpisodeDetails(_ episode: Episode, from podcast: Podcast)
