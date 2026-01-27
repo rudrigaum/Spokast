@@ -14,53 +14,47 @@ enum OPMLParserError: Error {
 
 final class OPMLParser: NSObject {
     
-    // MARK: - Properties
+    // MARK: - State
     private var items: [OPMLItem] = []
     private var categoryStack: [(name: String, depth: Int)] = []
     private var currentDepth: Int = 0
-    private var parseCompletion: ((Result<[OPMLItem], Error>) -> Void)?
+    private var parseError: Error?
     
     // MARK: - Public API
-    func parse(data: Data) async throws -> [OPMLItem] {
-        return try await withCheckedThrowingContinuation { continuation in
-            self.startParsing(data: data) { result in
-                switch result {
-                case .success(let items):
-                    continuation.resume(returning: items)
-                case .failure(let error):
-                    continuation.resume(throwing: error)
-                }
-            }
-        }
-    }
-    
-    // MARK: - Internal Parsing Logic
-    private func startParsing(data: Data, completion: @escaping (Result<[OPMLItem], Error>) -> Void) {
+    func parse(data: Data) throws -> [OPMLItem] {
         self.items = []
         self.categoryStack = []
         self.currentDepth = 0
-        self.parseCompletion = completion
+        self.parseError = nil
         
         let parser = XMLParser(data: data)
         parser.delegate = self
         
-        if !parser.parse() {
-            let error = parser.parserError ?? OPMLParserError.parsingFailed(reason: "Unknown error")
-            completion(.failure(error))
+        let success = parser.parse()
+        
+        if let error = parseError {
+            throw error
         }
+        
+        if !success {
+            throw parser.parserError ?? OPMLParserError.parsingFailed(reason: "Unknown XML error")
+        }
+        
+        return items
     }
 }
 
 // MARK: - XMLParserDelegate
+
 extension OPMLParser: XMLParserDelegate {
     
-    func parserDidStartDocument(_ parser: XMLParser) {
-    }
-    
     func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
+        if parseError != nil { return }
+        
         guard elementName == "outline" else {
-            if elementName == "body" || elementName == "opml" { return }
-            currentDepth += 1
+            if elementName != "body" && elementName != "opml" && elementName != "head" {
+                currentDepth += 1
+            }
             return
         }
         
@@ -71,6 +65,7 @@ extension OPMLParser: XMLParserDelegate {
         let htmlUrl = attributeDict["htmlUrl"]
         
         if let feedUrl = xmlUrl, let feedTitle = title {
+
             let currentCategory = categoryStack.last?.name
             
             let item = OPMLItem(
@@ -87,22 +82,20 @@ extension OPMLParser: XMLParserDelegate {
     }
     
     func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName qName: String?) {
+        if parseError != nil { return }
+        
         if elementName == "outline" {
             if let lastCategory = categoryStack.last, lastCategory.depth == currentDepth {
                 categoryStack.removeLast()
             }
         }
         
-        if elementName != "body" && elementName != "opml" {
-             currentDepth -= 1
+        if elementName != "body" && elementName != "opml" && elementName != "head" {
+            currentDepth -= 1
         }
     }
     
-    func parserDidEndDocument(_ parser: XMLParser) {
-        parseCompletion?(.success(items))
-    }
-    
     func parser(_ parser: XMLParser, parseErrorOccurred parseError: Error) {
-        parseCompletion?(.failure(parseError))
+        self.parseError = parseError
     }
 }

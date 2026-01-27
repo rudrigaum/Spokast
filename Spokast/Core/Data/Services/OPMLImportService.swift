@@ -12,25 +12,28 @@ import SwiftData
 final class OPMLImportService {
     
     // MARK: - Dependencies
-    private let parser: OPMLParser
     private let context: ModelContext
     private var categoryCache: [String: Category] = [:]
     
+    // MARK: - Init
     init(context: ModelContext? = nil) {
         self.context = context ?? DatabaseService.shared.context
-        self.parser = OPMLParser()
     }
     
     // MARK: - Public API
     func importOPML(from url: URL) async throws -> Int {
-        let data = try Data(contentsOf: url)
-        let items = try await parser.parse(data: data)
+        let items = try await Task.detached(priority: .userInitiated) {
+            let data = try Data(contentsOf: url)
+            let parser = OPMLParser()
+            return try parser.parse(data: data)
+        }.value
         
         guard !items.isEmpty else { return 0 }
         var importedCount = 0
         
         for item in items {
             guard item.rssURL != nil else { continue }
+            
             var category: Category? = nil
             if let categoryName = item.categoryName {
                 category = try fetchOrCreateCategory(named: categoryName)

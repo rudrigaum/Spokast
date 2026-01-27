@@ -8,53 +8,51 @@
 import Foundation
 import Combine
 
-enum FavoritesViewState {
+enum FavoritesViewState: Equatable {
     case loading
     case empty
-    case content
+    case loaded([SavedPodcast])
+    case error(String)
 }
 
-final class FavoritesViewModel {
+@MainActor
+protocol FavoritesViewModelProtocol: AnyObject {
+    var statePublisher: Published<FavoritesViewState>.Publisher { get }
+    func loadFavorites()
+    // func removePodcast(at index: Int) // TODO
+}
+
+@MainActor
+final class FavoritesViewModel: FavoritesViewModelProtocol {
     
     // MARK: - Dependencies
-    private let repository: FavoritesRepositoryProtocol
-    
-    // MARK: - Properties
-    private var cancellables = Set<AnyCancellable>()
+    private let service: LibraryServiceProtocol
     
     // MARK: - Outputs
-    @Published private(set) var podcasts: [FavoritePodcast] = []
-    @Published private(set) var viewState: FavoritesViewState = .loading
+    @Published private(set) var state: FavoritesViewState = .loading
     
-    // MARK: - Initialization
-    init(repository: FavoritesRepositoryProtocol) {
-        self.repository = repository
+    var statePublisher: Published<FavoritesViewState>.Publisher { $state }
+    
+    // MARK: - Init
+    init(service: LibraryServiceProtocol? = nil) {
+        self.service = service ?? LibraryService()
     }
     
     // MARK: - Methods
     func loadFavorites() {
-        self.viewState = .loading
-    
-        let items = repository.fetchFollowedPodcasts()
-        
-        if items.isEmpty {
-            self.podcasts = []
-            self.viewState = .empty
-        } else {
-            self.podcasts = items
-            self.viewState = .content
-        }
-    }
-    
-    func removePodcast(at index: Int) {
-        guard podcasts.indices.contains(index) else { return }
-        let podcastToRemove = podcasts[index]
+        state = .loading
         
         do {
-            try repository.removePodcast(id: podcastToRemove.id)
-            loadFavorites()
+            let items = try service.fetchPodcasts()
+            
+            if items.isEmpty {
+                state = .empty
+            } else {
+                state = .loaded(items)
+            }
         } catch {
-            print("❌ Error removing favorite: \(error)")
+            print("❌ Error fetching library: \(error)")
+            state = .error("Failed to load library.")
         }
     }
 }
