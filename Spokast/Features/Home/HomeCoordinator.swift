@@ -17,7 +17,7 @@ final class HomeCoordinator: Coordinator {
     }
     
     func start() {
-        let apiService = APIService()
+        let apiService = PodcastService()
         let viewModel = HomeViewModel(apiService: apiService)
         let viewController = HomeViewController(viewModel: viewModel)
         

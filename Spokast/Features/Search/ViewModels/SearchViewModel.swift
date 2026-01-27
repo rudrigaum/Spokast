@@ -21,14 +21,14 @@ enum SearchViewState {
 final class SearchViewModel {
     
     // MARK: - Dependencies
-    private let service: APIServiceProtocol
+    private let service: PodcastServiceProtocol
     
     // MARK: - Outputs
     @Published private(set) var podcasts: [Podcast] = []
     @Published private(set) var state: SearchViewState = .idle
     
     // MARK: - Init
-    init(service: APIServiceProtocol) {
+    init(service: PodcastServiceProtocol) {
         self.service = service
     }
     
