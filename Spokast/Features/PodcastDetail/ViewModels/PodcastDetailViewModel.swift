@@ -53,11 +53,22 @@ final class PodcastDetailViewModel {
     }
     
     // MARK: - Computed Properties
-    var title: String { return podcast.collectionName }
-    var artist: String { return podcast.artistName }
-    var genre: String { return podcast.primaryGenreName ?? "Podcast" }
+    var title: String {
+        return podcast.collectionName ?? "Unknown Title"
+    }
+    
+    var artist: String {
+        return podcast.artistName ?? "Unknown Artist"
+    }
+    
+    var genre: String {
+        return podcast.primaryGenreName ?? "Podcast"
+    }
+    
     var coverImageURL: URL? {
-        let urlString = podcast.artworkUrl600 ?? podcast.artworkUrl100
+        guard let urlString = podcast.artworkUrl600 ?? podcast.artworkUrl100 else {
+            return nil
+        }
         return URL(string: urlString)
     }
     

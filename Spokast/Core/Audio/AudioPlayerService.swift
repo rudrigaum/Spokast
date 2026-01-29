@@ -73,7 +73,7 @@ final class AudioPlayerService: NSObject, AudioPlayerServiceProtocol {
     func play(episode: Episode, from podcast: Podcast) {
         self.currentEpisode = episode
         
-        let artworkString = episode.artworkUrl600 ?? episode.artworkUrl160 ?? podcast.artworkUrl600 ?? podcast.artworkUrl100
+        let artworkString = episode.artworkUrl600 ?? episode.artworkUrl160 ?? podcast.artworkUrl600 ?? podcast.artworkUrl100 ?? ""
         self.currentPodcastImageURL = URL(string: artworkString)
         
         if let previewUrl = episode.previewUrl, let url = URL(string: previewUrl) {

@@ -53,7 +53,8 @@ struct Episode: Codable, Identifiable {
 extension Episode {
     var asPodcast: Podcast {
         return Podcast(
-            trackId: collectionId, 
+            trackId: collectionId,
+            collectionId: collectionId,
             artistName: artistName ?? "Unknown Artist",
             collectionName: collectionName ?? "Unknown Podcast",
             artworkUrl100: artworkUrl160 ?? "",

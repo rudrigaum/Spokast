@@ -41,15 +41,15 @@ final class SavedPodcast {
     }
 }
 
-// MARK: - Helper para converter da API para o Banco
+// MARK: - Helper to convert from API to Database
 extension SavedPodcast {
     convenience init(from apiPodcast: Podcast, category: Category? = nil) {
         self.init(
-            collectionId: apiPodcast.trackId ?? 0, 
-            artistName: apiPodcast.artistName,
-            collectionName: apiPodcast.collectionName,
+            collectionId: apiPodcast.collectionId ?? apiPodcast.trackId ?? 0,
+            artistName: apiPodcast.artistName ?? "Unknown Artist",
+            collectionName: apiPodcast.collectionName ?? "Unknown Podcast",
             feedUrl: apiPodcast.feedUrl,
-            artworkUrl600: apiPodcast.artworkUrl600,
+            artworkUrl600: apiPodcast.artworkUrl600 ?? apiPodcast.artworkUrl100,
             primaryGenreName: apiPodcast.primaryGenreName,
             category: category
         )

@@ -63,10 +63,10 @@ final class FeaturedPodcastCell: UICollectionViewCell {
     
     // MARK: - Configuration
     func configure(with podcast: Podcast) {
-        titleLabel.text = podcast.collectionName
-        authorLabel.text = podcast.artistName
+        titleLabel.text = podcast.collectionName ?? "Unknown Title"
+        authorLabel.text = podcast.artistName ?? "Unknown Artist"
         
-        let urlString = podcast.artworkUrl600 ?? podcast.artworkUrl100
+        let urlString = podcast.artworkUrl600 ?? podcast.artworkUrl100 ?? ""
         
         if let url = URL(string: urlString) {
             

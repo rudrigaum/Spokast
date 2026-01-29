@@ -35,7 +35,7 @@ final class PodcastService: PodcastServiceProtocol {
         guard let url = makeURL(endpoint: "lookup", queryItems: [
             URLQueryItem(name: "id", value: "\(podcastId)"),
             URLQueryItem(name: "entity", value: "podcastEpisode"),
-            URLQueryItem(name: "limit", value: "200") // Fetch up to 200 episodes
+            URLQueryItem(name: "limit", value: "200")
         ]) else {
             throw APIError.invalidURL
         }
@@ -77,10 +77,17 @@ final class PodcastService: PodcastServiceProtocol {
     
     // MARK: - Private Helpers
     private func performRequest<T: Decodable>(url: URL) async throws -> T {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 10.0
+        let session = URLSession(configuration: config)
+        
         let (data, response) = try await session.data(from: url)
         
         guard let httpResponse = response as? HTTPURLResponse,
               (200...299).contains(httpResponse.statusCode) else {
+            if let httpResponse = response as? HTTPURLResponse {
+                print("❌ HTTP Error: \(httpResponse.statusCode) para URL: \(url.absoluteString)")
+            }
             throw APIError.invalidResponse
         }
         

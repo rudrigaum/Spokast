@@ -193,9 +193,9 @@ extension SearchViewController: UITableViewDataSource {
         let podcast = viewModel.podcasts[indexPath.row]
         
         cell.configure(
-            title: podcast.collectionName,
-            publisher: podcast.artistName,
-            imageUrlString: podcast.artworkUrl100
+            title: podcast.collectionName ?? "Unknown Title",
+            publisher: podcast.artistName ?? "Unknown Artist",
+            imageUrlString: podcast.artworkUrl100 ?? ""
         )
         
         return cell
