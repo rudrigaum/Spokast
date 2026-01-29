@@ -25,14 +25,14 @@ enum HomeViewState {
 final class HomeViewModel {
 
     // MARK: - Dependencies
-    private let apiService: APIServiceProtocol
+    private let apiService: PodcastServiceProtocol
 
     // MARK: - Outputs
     @Published private(set) var sections: [HomeSection] = []
     @Published private(set) var state: HomeViewState = .loading
     
     // MARK: - Initialization
-    init(apiService: APIServiceProtocol) {
+    init(apiService: PodcastServiceProtocol) {
         self.apiService = apiService
     }
 

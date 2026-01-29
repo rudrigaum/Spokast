@@ -248,7 +248,7 @@ extension PodcastDetailViewController: UITableViewDataSource {
         
         let episode = viewModel.episodes[indexPath.row]
         let podcastArtString = viewModel.podcast.artworkUrl600 ?? viewModel.podcast.artworkUrl100
-        let podcastArtURL = URL(string: podcastArtString)
+        let podcastArtURL = URL(string: podcastArtString ?? "")
         let isPlayingThisEpisode = viewModel.isPlaying && (viewModel.currentPlayingID == episode.id)
         let downloadStatus = viewModel.getDownloadStatus(for: episode)
         

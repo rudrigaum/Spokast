@@ -19,31 +19,44 @@ enum FavoritesViewState: Equatable {
 protocol FavoritesViewModelProtocol: AnyObject {
     var statePublisher: Published<FavoritesViewState>.Publisher { get }
     func loadFavorites()
-    // func removePodcast(at index: Int) // TODO
 }
 
 @MainActor
 final class FavoritesViewModel: FavoritesViewModelProtocol {
     
     // MARK: - Dependencies
-    private let service: LibraryServiceProtocol
+    private let libraryService: LibraryServiceProtocol
+    private let syncService: LibrarySyncServiceProtocol
     
-    // MARK: - Outputs
+    // MARK: - Output
     @Published private(set) var state: FavoritesViewState = .loading
     
     var statePublisher: Published<FavoritesViewState>.Publisher { $state }
     
     // MARK: - Init
-    init(service: LibraryServiceProtocol? = nil) {
-        self.service = service ?? LibraryService()
+    init(
+        libraryService: LibraryServiceProtocol? = nil,
+        syncService: LibrarySyncServiceProtocol? = nil
+    ) {
+        self.libraryService = libraryService ?? LibraryService()
+        self.syncService = syncService ?? LibrarySyncService()
     }
     
     // MARK: - Methods
     func loadFavorites() {
-        state = .loading
+        fetchLocalData()
+    
+        Task {
+            await performSync()
+        }
+    }
+    
+    private func fetchLocalData() {
+        if case .loading = state {
+        }
         
         do {
-            let items = try service.fetchPodcasts()
+            let items = try libraryService.fetchPodcasts()
             
             if items.isEmpty {
                 state = .empty
@@ -53,6 +66,18 @@ final class FavoritesViewModel: FavoritesViewModelProtocol {
         } catch {
             print("❌ Error fetching library: \(error)")
             state = .error("Failed to load library.")
+        }
+    }
+    
+    private func performSync() async {
+        do {
+            let updatedCount = try await syncService.syncMissingMetadata()
+            
+            if updatedCount > 0 {
+                fetchLocalData()
+            }
+        } catch {
+            print("⚠️ Sync Warning: \(error.localizedDescription)")
         }
     }
 }

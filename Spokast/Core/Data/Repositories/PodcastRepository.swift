@@ -14,11 +14,11 @@ protocol PodcastRepositoryProtocol {
 final class PodcastRepository: PodcastRepositoryProtocol {
     
     // MARK: - Dependencies
-    private let apiService: APIServiceProtocol
+    private let apiService: PodcastServiceProtocol
     private let rssParser: RSSParserServiceProtocol
     
     // MARK: - Initialization
-    init(apiService: APIServiceProtocol = APIService(),rssParser: RSSParserServiceProtocol = RSSParserService()) {
+    init(apiService: PodcastServiceProtocol = PodcastService(),rssParser: RSSParserServiceProtocol = RSSParserService()) {
         self.apiService = apiService
         self.rssParser = rssParser
     }

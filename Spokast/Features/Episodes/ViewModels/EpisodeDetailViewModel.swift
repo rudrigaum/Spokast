@@ -25,7 +25,7 @@ final class EpisodeDetailViewModel {
     }
     
     var podcastName: String {
-        return podcast.artistName
+        return podcast.artistName ?? "Unknown Artist"
     }
     
     var description: String {
@@ -45,7 +45,7 @@ final class EpisodeDetailViewModel {
             return url
         }
         
-        return URL(string: podcast.artworkUrl100)
+        return URL(string: podcast.artworkUrl100 ?? "")
     }
     
     

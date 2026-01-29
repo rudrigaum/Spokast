@@ -20,7 +20,7 @@ final class SearchCoordinator: Coordinator {
     
     // MARK: - Start
     func start() {
-        let service = APIService()
+        let service = PodcastService()
         let viewModel = SearchViewModel(service: service)
         
         let viewController = SearchViewController(viewModel: viewModel)

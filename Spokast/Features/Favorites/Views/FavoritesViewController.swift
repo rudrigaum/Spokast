@@ -129,14 +129,13 @@ extension FavoritesViewController: UITableViewDelegate {
         tableView.deselectRow(at: indexPath, animated: true)
         
         let savedPodcast = podcasts[indexPath.row]
-        
-        // Mapeamento: SavedPodcast (Banco) -> Podcast (Domínio/API)
-        // Isso permite que a tela de detalhes funcione sem modificações
+    
         let domainPodcast = Podcast(
             trackId: savedPodcast.collectionId,
+            collectionId: savedPodcast.collectionId,
             artistName: savedPodcast.artistName,
             collectionName: savedPodcast.collectionName,
-            artworkUrl100: savedPodcast.artworkUrl600 ?? "",
+            artworkUrl100: savedPodcast.artworkUrl600 ?? "", 
             feedUrl: savedPodcast.feedUrl,
             artworkUrl600: savedPodcast.artworkUrl600,
             primaryGenreName: savedPodcast.primaryGenreName
