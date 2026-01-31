@@ -6,30 +6,36 @@
 //
 
 import Foundation
-import CoreData
+import SwiftData
 
 // MARK: - Protocol
+@MainActor
 protocol FavoritesRepositoryProtocol {
     func togglePodcastSubscription(for podcast: Podcast) throws -> Bool
     func isPodcastFollowed(id: Int) -> Bool
-    func fetchFollowedPodcasts() -> [FavoritePodcast]
+    func fetchFollowedPodcasts() -> [SavedPodcast]
+    
+    // TODO: Legacy / To Migrate (SavedEpisode)
     func toggleEpisodeLike(for episode: Episode) throws -> Bool
     func isEpisodeLiked(id: Int) -> Bool
-    func fetchLikedEpisodes() -> [FavoriteEpisode]
-    func removePodcast(id: Int64) throws
+    // func fetchLikedEpisodes() -> [FavoriteEpisode]
 }
 
 // MARK: - Implementation
+@MainActor
 final class FavoritesRepository: FavoritesRepositoryProtocol {
+    private let context: ModelContext
     
-    private let context = CoreDataService.shared.viewContext
+    init(context: ModelContext? = nil) {
+        self.context = context ?? DatabaseService.shared.context
+    }
     
     // MARK: - PODCASTS
     func togglePodcastSubscription(for podcast: Podcast) throws -> Bool {
-        let podcastId = podcast.trackId ?? 0
+        let idToCheck = podcast.collectionId ?? podcast.trackId ?? 0
         
-        if isPodcastFollowed(id: podcastId) {
-            try removePodcast(id: Int64(podcastId))
+        if isPodcastFollowed(id: idToCheck) {
+            try removePodcast(id: idToCheck)
             return false
         } else {
             try savePodcast(from: podcast)
@@ -38,97 +44,59 @@ final class FavoritesRepository: FavoritesRepositoryProtocol {
     }
     
     func isPodcastFollowed(id: Int) -> Bool {
-        let request: NSFetchRequest<FavoritePodcast> = FavoritePodcast.fetchRequest()
-        request.predicate = NSPredicate(format: "id == %d", Int64(id))
-        request.fetchLimit = 1
-        return (try? context.count(for: request)) ?? 0 > 0
-    }
-    
-    func fetchFollowedPodcasts() -> [FavoritePodcast] {
-        let request: NSFetchRequest<FavoritePodcast> = FavoritePodcast.fetchRequest()
-        request.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: false)]
+        let idToCheck = id
+        var descriptor = FetchDescriptor<SavedPodcast>(
+            predicate: #Predicate { $0.collectionId == idToCheck }
+        )
+        descriptor.fetchLimit = 1
         
         do {
-            return try context.fetch(request)
+            let count = try context.fetchCount(descriptor)
+            return count > 0
+        } catch {
+            print("❌ Error checking if podcast is followed: \(error)")
+            return false
+        }
+    }
+    
+    func fetchFollowedPodcasts() -> [SavedPodcast] {
+        let descriptor = FetchDescriptor<SavedPodcast>(
+            sortBy: [SortDescriptor(\.collectionName)]
+        )
+        
+        do {
+            return try context.fetch(descriptor)
         } catch {
             print("❌ Error fetching followed podcasts: \(error)")
             return []
         }
     }
     
-    private func savePodcast(from podcastModel: Podcast) throws {
-        let podcast = FavoritePodcast(context: context)
-        podcast.id = Int64(podcastModel.trackId ?? 0)
-        podcast.title = podcastModel.collectionName
+    private func savePodcast(from apiPodcast: Podcast) throws {
+        let savedPodcast = SavedPodcast(from: apiPodcast)
         
-        podcast.coverUrl = podcastModel.artworkUrl600 ?? podcastModel.artworkUrl100
-        podcast.author = podcastModel.artistName
-        podcast.createdAt = Date()
-        
+        context.insert(savedPodcast)
         try context.save()
     }
     
-    func removePodcast(id: Int64) throws {
-        let request: NSFetchRequest<FavoritePodcast> = FavoritePodcast.fetchRequest()
-        request.predicate = NSPredicate(format: "id == %d", id)
+    private func removePodcast(id: Int) throws {
+        let idToDelete = id
+        let descriptor = FetchDescriptor<SavedPodcast>(
+            predicate: #Predicate { $0.collectionId == idToDelete }
+        )
         
-        if let result = try context.fetch(request).first {
-            context.delete(result)
+        if let podcastToDelete = try context.fetch(descriptor).first {
+            context.delete(podcastToDelete)
             try context.save()
         }
     }
     
-    // MARK: - EPISODES (Likes)
+    // MARK: - EPISODES (Legacy / To Migrate)
     func toggleEpisodeLike(for episode: Episode) throws -> Bool {
-        let id = episode.trackId
-        
-        if isEpisodeLiked(id: id) {
-            try removeEpisode(id: Int64(id))
-            return false
-        } else {
-            try saveEpisode(from: episode)
-            return true
-        }
+        return false
     }
     
     func isEpisodeLiked(id: Int) -> Bool {
-        let request: NSFetchRequest<FavoriteEpisode> = FavoriteEpisode.fetchRequest()
-        request.predicate = NSPredicate(format: "id == %d", Int64(id))
-        request.fetchLimit = 1
-        return (try? context.count(for: request)) ?? 0 > 0
-    }
-    
-    func fetchLikedEpisodes() -> [FavoriteEpisode] {
-        let request: NSFetchRequest<FavoriteEpisode> = FavoriteEpisode.fetchRequest()
-        request.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: false)]
-        
-        do {
-            return try context.fetch(request)
-        } catch {
-            print("❌ Error fetching liked episodes: \(error)")
-            return []
-        }
-    }
-    
-    private func saveEpisode(from episode: Episode) throws {
-        let favorite = FavoriteEpisode(context: context)
-        favorite.id = Int64(episode.trackId)
-        favorite.title = episode.trackName
-        favorite.audioUrl = episode.previewUrl
-        favorite.coverUrl = episode.artworkUrl160
-        favorite.author = episode.collectionName ?? "Unknown"
-        favorite.createdAt = Date()
-        favorite.duration = episode.durationInSeconds
-        try context.save()
-    }
-    
-    private func removeEpisode(id: Int64) throws {
-        let request: NSFetchRequest<FavoriteEpisode> = FavoriteEpisode.fetchRequest()
-        request.predicate = NSPredicate(format: "id == %d", id)
-        
-        if let result = try context.fetch(request).first {
-            context.delete(result)
-            try context.save()
-        }
+        return false
     }
 }

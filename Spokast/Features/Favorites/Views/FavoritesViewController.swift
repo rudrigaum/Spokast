@@ -8,6 +8,7 @@
 import Foundation
 import UIKit
 import Combine
+import Kingfisher
 
 @MainActor
 protocol PodcastSelectionDelegate: AnyObject {
@@ -16,17 +17,49 @@ protocol PodcastSelectionDelegate: AnyObject {
 
 final class FavoritesViewController: UIViewController {
     
+    // MARK: - Typealiases
+    typealias DataSource = UICollectionViewDiffableDataSource<FavoritesSection, FavoriteItem>
+    typealias Snapshot = NSDiffableDataSourceSnapshot<FavoritesSection, FavoriteItem>
+    
     // MARK: - Dependencies
     private let viewModel: FavoritesViewModelProtocol
     weak var coordinator: PodcastSelectionDelegate?
     
     // MARK: - Properties
+    private var dataSource: DataSource!
     private var cancellables = Set<AnyCancellable>()
-    private var podcasts: [SavedPodcast] = []
     
-    private var customView: FavoritesView {
-        return self.view as! FavoritesView
-    }
+    // MARK: - UI Components
+    private lazy var collectionView: UICollectionView = {
+        var config = UICollectionLayoutListConfiguration(appearance: .insetGrouped)
+        config.headerMode = .supplementary
+        config.backgroundColor = .systemGroupedBackground
+        
+        let layout = UICollectionViewCompositionalLayout.list(using: config)
+        let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        cv.translatesAutoresizingMaskIntoConstraints = false
+        cv.delegate = self
+        return cv
+    }()
+    
+    private let loadingIndicator: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .large)
+        indicator.translatesAutoresizingMaskIntoConstraints = false
+        indicator.hidesWhenStopped = true
+        return indicator
+    }()
+    
+    private let emptyLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Your library is empty.\nAdd podcasts via search."
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        label.textColor = .secondaryLabel
+        label.font = .preferredFont(forTextStyle: .body)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.isHidden = true
+        return label
+    }()
     
     // MARK: - Init
     
@@ -48,15 +81,13 @@ final class FavoritesViewController: UIViewController {
     }
     
     // MARK: - Lifecycle
-    
-    override func loadView() {
-        self.view = FavoritesView()
-    }
-    
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupTableView()
+        setupUI()
+        configureDataSource()
         setupBindings()
+        
+        navigationController?.navigationBar.prefersLargeTitles = true
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -64,92 +95,177 @@ final class FavoritesViewController: UIViewController {
         viewModel.loadFavorites()
     }
     
-    // MARK: - Setup
+    // MARK: - Setup UI
+    private func setupUI() {
+        view.backgroundColor = .systemGroupedBackground
+        
+        view.addSubview(collectionView)
+        view.addSubview(loadingIndicator)
+        view.addSubview(emptyLabel)
+        
+        NSLayoutConstraint.activate([
+            collectionView.topAnchor.constraint(equalTo: view.topAnchor),
+            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            
+            loadingIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            loadingIndicator.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            
+            emptyLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            emptyLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            emptyLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 32),
+            emptyLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -32)
+        ])
+    }
     
-    private func setupTableView() {
-        customView.tableView.dataSource = self
-        customView.tableView.delegate = self
+    
+    // MARK: - Diffable Data Source Configuration
+    private func configureDataSource() {
+        let cellRegistration = makeCellRegistration()
+        let headerRegistration = makeHeaderRegistration()
+        
+        dataSource = DataSource(collectionView: collectionView) { collectionView, indexPath, item in
+            return collectionView.dequeueConfiguredReusableCell(using: cellRegistration, for: indexPath, item: item)
+        }
+        
+        dataSource.supplementaryViewProvider = { collectionView, kind, indexPath in
+            return collectionView.dequeueConfiguredReusableSupplementary(using: headerRegistration, for: indexPath)
+        }
+    }
+    
+    // MARK: - Cell & Header Factories
+    private func makeCellRegistration() -> UICollectionView.CellRegistration<UICollectionViewListCell, FavoriteItem> {
+        return UICollectionView.CellRegistration<UICollectionViewListCell, FavoriteItem> { [weak self] cell, indexPath, item in
+            
+            var content = cell.defaultContentConfiguration()
+            
+            content.text = item.title
+            content.secondaryText = item.artist
+            
+            content.textProperties.font = .preferredFont(forTextStyle: .headline)
+            content.secondaryTextProperties.font = .preferredFont(forTextStyle: .subheadline)
+            content.secondaryTextProperties.color = .secondaryLabel
+            
+            content.image = UIImage(systemName: "mic.circle.fill")
+            content.imageProperties.tintColor = .systemPurple
+            content.imageProperties.maximumSize = CGSize(width: 50, height: 50)
+            content.imageProperties.cornerRadius = 8
+            
+            cell.contentConfiguration = content
+            cell.accessories = [.disclosureIndicator()]
+            
+            self?.loadImage(for: item, into: cell)
+        }
+    }
+    
+    private func makeHeaderRegistration() -> UICollectionView.SupplementaryRegistration<UICollectionViewListCell> {
+        return UICollectionView.SupplementaryRegistration<UICollectionViewListCell>(elementKind: UICollectionView.elementKindSectionHeader) { [weak self] supplementaryView, elementKind, indexPath in
+            guard let self = self else { return }
+            
+            let snapshot = self.dataSource.snapshot()
+            let sections = snapshot.sectionIdentifiers
+            
+            if indexPath.section < sections.count {
+                let section = sections[indexPath.section]
+                var content = supplementaryView.defaultContentConfiguration()
+                
+                content.text = section.title
+                content.textProperties.font = .preferredFont(forTextStyle: .title3)
+                content.textProperties.color = .label
+                
+                supplementaryView.contentConfiguration = content
+            }
+        }
+    }
+    
+    private func loadImage(for item: FavoriteItem, into cell: UICollectionViewListCell) {
+        guard let urlString = item.artworkUrl, let url = URL(string: urlString) else { return }
+        
+        let processor = DownsamplingImageProcessor(size: CGSize(width: 100, height: 100))
+        |> RoundCornerImageProcessor(cornerRadius: 8)
+        
+        let options: KingfisherOptionsInfo = [
+            .processor(processor),
+            .scaleFactor(UIScreen.main.scale),
+            .transition(.fade(0.3)),
+            .cacheOriginalImage
+        ]
+        
+        KingfisherManager.shared.retrieveImage(with: url, options: options) { [weak cell] result in
+            DispatchQueue.main.async {
+                guard let cell = cell else { return }
+                
+                switch result {
+                case .success(let value):
+                    if var updatedContent = cell.contentConfiguration as? UIListContentConfiguration {
+                        updatedContent.image = value.image
+                        cell.contentConfiguration = updatedContent
+                    }
+                case .failure:
+                    break
+                }
+            }
+        }
+    }
+    
+    // MARK: - Bindings
+    
+    private func bindViewModel() {
+        setupBindings()
     }
     
     private func setupBindings() {
         viewModel.statePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] state in
-                self?.handleStateChange(state)
+                self?.handleState(state)
             }
             .store(in: &cancellables)
     }
     
-    // MARK: - State Handling
-    private func handleStateChange(_ state: FavoritesViewState) {
+    private func handleState(_ state: FavoritesViewState) {
         switch state {
         case .loading:
-            break
+            loadingIndicator.startAnimating()
+            collectionView.isHidden = true
+            emptyLabel.isHidden = true
             
         case .empty:
-            self.podcasts = []
-            customView.tableView.reloadData()
+            loadingIndicator.stopAnimating()
+            collectionView.isHidden = true
+            emptyLabel.isHidden = false
             
-        case .loaded(let items):
-            self.podcasts = items
-            customView.tableView.reloadData()
+        case .loaded(let sections):
+            loadingIndicator.stopAnimating()
+            collectionView.isHidden = false
+            emptyLabel.isHidden = true
+            applySnapshot(sections)
             
         case .error(let message):
-            self.podcasts = []
-            customView.tableView.reloadData()
-            print("Error state: \(message)")
+            loadingIndicator.stopAnimating()
+            print("Error: \(message)")
         }
+    }
+    
+    private func applySnapshot(_ sections: [FavoritesSection]) {
+        var snapshot = Snapshot()
+        snapshot.appendSections(sections)
+        for section in sections {
+            snapshot.appendItems(section.items, toSection: section)
+        }
+        dataSource.apply(snapshot, animatingDifferences: true)
     }
 }
 
-// MARK: - UITableViewDataSource
-extension FavoritesViewController: UITableViewDataSource {
+// MARK: - UICollectionViewDelegate
+extension FavoritesViewController: UICollectionViewDelegate {
     
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return podcasts.count
-    }
-    
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: FavoriteCell.reuseIdentifier, for: indexPath) as? FavoriteCell else {
-            return UITableViewCell()
-        }
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        collectionView.deselectItem(at: indexPath, animated: true)
         
-        let podcast = podcasts[indexPath.row]
-        cell.configure(with: podcast)
-        
-        return cell
-    }
-}
-
-// MARK: - UITableViewDelegate
-
-extension FavoritesViewController: UITableViewDelegate {
-    
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
-        
-        let savedPodcast = podcasts[indexPath.row]
-    
-        let domainPodcast = Podcast(
-            trackId: savedPodcast.collectionId,
-            collectionId: savedPodcast.collectionId,
-            artistName: savedPodcast.artistName,
-            collectionName: savedPodcast.collectionName,
-            artworkUrl100: savedPodcast.artworkUrl600 ?? "", 
-            feedUrl: savedPodcast.feedUrl,
-            artworkUrl600: savedPodcast.artworkUrl600,
-            primaryGenreName: savedPodcast.primaryGenreName
-        )
-        
-        coordinator?.didSelectPodcast(domainPodcast)
-    }
-    
-    // Desabilitamos DELETE por enquanto
-    /*
-    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
-        if editingStyle == .delete {
-            // viewModel.removePodcast(at: indexPath.row)
+        if let domainPodcast = viewModel.getPodcastDomainObject(at: indexPath) {
+            coordinator?.didSelectPodcast(domainPodcast)
         }
     }
-    */
 }
