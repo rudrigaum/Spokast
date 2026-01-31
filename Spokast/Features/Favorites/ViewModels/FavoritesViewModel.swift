@@ -20,7 +20,11 @@ enum FavoritesViewState: Equatable {
 @MainActor
 protocol FavoritesViewModelProtocol: AnyObject {
     var statePublisher: Published<FavoritesViewState>.Publisher { get }
+    var availableGenres: [String] { get }
+    var currentFilter: String? { get }
+    
     func loadFavorites()
+    func filter(by genre: String?)
     func getPodcastDomainObject(at indexPath: IndexPath) -> Podcast?
 }
 
@@ -33,12 +37,18 @@ final class FavoritesViewModel: FavoritesViewModelProtocol {
     private let syncService: LibrarySyncServiceProtocol
     
     // MARK: - Data Source
-    private var currentSections: [FavoritesSection] = []
+    private var allSections: [FavoritesSection] = []
+    private var filteredSections: [FavoritesSection] = []
     
     // MARK: - Output
     @Published private(set) var state: FavoritesViewState = .loading
+    @Published private(set) var currentFilter: String? = nil
     
     var statePublisher: Published<FavoritesViewState>.Publisher { $state }
+    
+    var availableGenres: [String] {
+        return allSections.map { $0.title }
+    }
     
     // MARK: - Init
     init(
@@ -50,17 +60,22 @@ final class FavoritesViewModel: FavoritesViewModelProtocol {
     }
     
     // MARK: - Methods
+    
     func loadFavorites() {
         fetchLocalData()
-    
         Task {
             await performSync()
         }
     }
     
+    func filter(by genre: String?) {
+        self.currentFilter = genre
+        applyFilter()
+    }
+    
     func getPodcastDomainObject(at indexPath: IndexPath) -> Podcast? {
-        guard indexPath.section < currentSections.count else { return nil }
-        let section = currentSections[indexPath.section]
+        guard indexPath.section < filteredSections.count else { return nil }
+        let section = filteredSections[indexPath.section]
         
         guard indexPath.row < section.items.count else { return nil }
         let item = section.items[indexPath.row]
@@ -83,16 +98,34 @@ final class FavoritesViewModel: FavoritesViewModelProtocol {
             let podcasts = try libraryService.fetchPodcasts()
             
             if podcasts.isEmpty {
-                self.currentSections = []
+                self.allSections = []
+                self.filteredSections = []
                 self.state = .empty
             } else {
-                let sections = createSections(from: podcasts)
-                self.currentSections = sections
-                self.state = .loaded(sections)
+                self.allSections = createSections(from: podcasts)
+                applyFilter()
             }
         } catch {
             print("❌ Error fetching library: \(error)")
             self.state = .error("Failed to load library.")
+        }
+    }
+    
+    private func applyFilter() {
+        if let genre = currentFilter {
+            self.filteredSections = allSections.filter { $0.title == genre }
+        } else {
+            self.filteredSections = allSections
+        }
+        
+        if filteredSections.isEmpty {
+            if allSections.isEmpty {
+                state = .empty
+            } else {
+                state = .loaded([])
+            }
+        } else {
+            state = .loaded(filteredSections)
         }
     }
     
