@@ -62,7 +62,6 @@ final class FavoritesViewController: UIViewController {
     }()
     
     // MARK: - Init
-    
     init(viewModel: FavoritesViewModelProtocol? = nil) {
         self.viewModel = viewModel ?? FavoritesViewModel()
         super.init(nibName: nil, bundle: nil)
@@ -84,6 +83,7 @@ final class FavoritesViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        setupNavigation()
         configureDataSource()
         setupBindings()
         
@@ -119,6 +119,49 @@ final class FavoritesViewController: UIViewController {
         ])
     }
     
+    private func setupNavigation() {
+        let filterButton = UIBarButtonItem(
+            image: UIImage(systemName: "line.3.horizontal.decrease.circle"),
+            style: .plain,
+            target: nil,
+            action: nil
+        )
+        filterButton.isEnabled = false
+        navigationItem.rightBarButtonItem = filterButton
+    }
+    
+    // MARK: - Menu Logic (Filtering)
+    private func updateFilterMenu() {
+        guard !viewModel.availableGenres.isEmpty else {
+            navigationItem.rightBarButtonItem?.isEnabled = false
+            return
+        }
+        
+        navigationItem.rightBarButtonItem?.isEnabled = true
+        
+        let showAllAction = UIAction(
+            title: "All Categories",
+            state: viewModel.currentFilter == nil ? .on : .off
+        ) { [weak self] _ in
+            self?.viewModel.filter(by: nil)
+        }
+        
+        let genreActions = viewModel.availableGenres.map { genre in
+            UIAction(
+                title: genre,
+                state: self.viewModel.currentFilter == genre ? .on : .off
+            ) { [weak self] _ in
+                self?.viewModel.filter(by: genre)
+            }
+        }
+
+        let menu = UIMenu(
+            title: "Filter by Genre",
+            children: [showAllAction] + genreActions
+        )
+        
+        navigationItem.rightBarButtonItem?.menu = menu
+    }
     
     // MARK: - Diffable Data Source Configuration
     private func configureDataSource() {
@@ -183,7 +226,7 @@ final class FavoritesViewController: UIViewController {
         guard let urlString = item.artworkUrl, let url = URL(string: urlString) else { return }
         
         let processor = DownsamplingImageProcessor(size: CGSize(width: 100, height: 100))
-        |> RoundCornerImageProcessor(cornerRadius: 8)
+                       |> RoundCornerImageProcessor(cornerRadius: 8)
         
         let options: KingfisherOptionsInfo = [
             .processor(processor),
@@ -195,7 +238,6 @@ final class FavoritesViewController: UIViewController {
         KingfisherManager.shared.retrieveImage(with: url, options: options) { [weak cell] result in
             DispatchQueue.main.async {
                 guard let cell = cell else { return }
-                
                 switch result {
                 case .success(let value):
                     if var updatedContent = cell.contentConfiguration as? UIListContentConfiguration {
@@ -210,41 +252,40 @@ final class FavoritesViewController: UIViewController {
     }
     
     // MARK: - Bindings
-    
-    private func bindViewModel() {
-        setupBindings()
-    }
-    
     private func setupBindings() {
         viewModel.statePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] state in
-                self?.handleState(state)
+                self?.handleStateChange(state)
             }
             .store(in: &cancellables)
     }
     
-    private func handleState(_ state: FavoritesViewState) {
+    private func handleStateChange(_ state: FavoritesViewState) {
         switch state {
         case .loading:
             loadingIndicator.startAnimating()
             collectionView.isHidden = true
             emptyLabel.isHidden = true
+            navigationItem.rightBarButtonItem?.isEnabled = false
             
         case .empty:
             loadingIndicator.stopAnimating()
             collectionView.isHidden = true
             emptyLabel.isHidden = false
+            navigationItem.rightBarButtonItem?.isEnabled = false
             
         case .loaded(let sections):
             loadingIndicator.stopAnimating()
             collectionView.isHidden = false
             emptyLabel.isHidden = true
+            
+            updateFilterMenu()
             applySnapshot(sections)
             
         case .error(let message):
             loadingIndicator.stopAnimating()
-            print("Error: \(message)")
+            print("Error state: \(message)")
         }
     }
     
