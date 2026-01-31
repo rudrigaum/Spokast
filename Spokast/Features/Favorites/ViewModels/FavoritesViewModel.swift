@@ -66,8 +66,8 @@ final class FavoritesViewModel: FavoritesViewModelProtocol {
         let item = section.items[indexPath.row]
         
         return Podcast(
-            trackId: item.id,
-            collectionId: item.id,
+            trackId: item.collectionId,
+            collectionId: item.collectionId,
             artistName: item.artist,
             collectionName: item.title,
             artworkUrl100: item.artworkUrl ?? "",
@@ -111,7 +111,7 @@ final class FavoritesViewModel: FavoritesViewModelProtocol {
     private func createSections(from podcasts: [SavedPodcast]) -> [FavoritesSection] {
         let items: [FavoriteItem] = podcasts.map { podcast in
             FavoriteItem(
-                id: podcast.collectionId,
+                collectionId: podcast.collectionId,
                 title: podcast.collectionName,
                 artist: podcast.artistName,
                 artworkUrl: podcast.artworkUrl600,
