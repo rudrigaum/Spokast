@@ -130,7 +130,7 @@ final class FavoritesViewController: UIViewController {
         navigationItem.rightBarButtonItem = filterButton
     }
     
-    // MARK: - Menu Logic (Filtering)
+    // MARK: - Menu Logic
     private func updateFilterMenu() {
         guard !viewModel.availableGenres.isEmpty else {
             navigationItem.rightBarButtonItem?.isEnabled = false
@@ -154,13 +154,40 @@ final class FavoritesViewController: UIViewController {
                 self?.viewModel.filter(by: genre)
             }
         }
-
+        
         let menu = UIMenu(
             title: "Filter by Genre",
             children: [showAllAction] + genreActions
         )
         
         navigationItem.rightBarButtonItem?.menu = menu
+    }
+    
+    // MARK: - User Actions (Edit Category)
+    private func presentEditCategoryAlert(for item: FavoriteItem) {
+        let alert = UIAlertController(
+            title: "Edit Category",
+            message: "Enter a custom category name for '\(item.title)'",
+            preferredStyle: .alert
+        )
+        
+        alert.addTextField { textField in
+            textField.placeholder = "Category Name (e.g. Morning Commute)"
+            textField.text = item.genre
+            textField.autocapitalizationType = .sentences
+        }
+        
+        let saveAction = UIAlertAction(title: "Save", style: .default) { [weak self, weak alert] _ in
+            guard let newName = alert?.textFields?.first?.text, !newName.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+            self?.viewModel.updatePodcastCategory(podcastId: item.collectionId, newCategory: newName)
+        }
+        
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
+        
+        alert.addAction(cancelAction)
+        alert.addAction(saveAction)
+        
+        present(alert, animated: true)
     }
     
     // MARK: - Diffable Data Source Configuration
@@ -307,6 +334,30 @@ extension FavoritesViewController: UICollectionViewDelegate {
         
         if let domainPodcast = viewModel.getPodcastDomainObject(at: indexPath) {
             coordinator?.didSelectPodcast(domainPodcast)
+        }
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        
+        guard let item = dataSource.itemIdentifier(for: indexPath) else { return nil }
+        
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { [weak self] _ in
+            
+            let editAction = UIAction(
+                title: "Edit Category",
+                image: UIImage(systemName: "pencil")
+            ) { _ in
+                self?.presentEditCategoryAlert(for: item)
+            }
+            
+            let resetAction = UIAction(
+                title: "Restore Default",
+                image: UIImage(systemName: "arrow.counterclockwise")
+            ) { _ in
+                self?.viewModel.updatePodcastCategory(podcastId: item.collectionId, newCategory: nil)
+            }
+            
+            return UIMenu(title: "Options", children: [editAction, resetAction])
         }
     }
 }

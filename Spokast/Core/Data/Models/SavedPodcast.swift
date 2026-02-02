@@ -20,6 +20,7 @@ final class SavedPodcast {
     var isSubscribed: Bool = true
     var addedAt: Date
     var category: Category?
+    var customCategory: String?
     
     init(
         collectionId: Int,
@@ -28,7 +29,8 @@ final class SavedPodcast {
         feedUrl: String? = nil,
         artworkUrl600: String? = nil,
         primaryGenreName: String? = nil,
-        category: Category? = nil
+        category: Category? = nil,
+        customCategory: String? = nil
     ) {
         self.collectionId = collectionId
         self.artistName = artistName
@@ -36,8 +38,10 @@ final class SavedPodcast {
         self.feedUrl = feedUrl
         self.artworkUrl600 = artworkUrl600
         self.primaryGenreName = primaryGenreName
+        self.isSubscribed = true
         self.addedAt = Date()
         self.category = category
+        self.customCategory = customCategory
     }
 }
 
@@ -51,7 +55,8 @@ extension SavedPodcast {
             feedUrl: apiPodcast.feedUrl,
             artworkUrl600: apiPodcast.artworkUrl600 ?? apiPodcast.artworkUrl100,
             primaryGenreName: apiPodcast.primaryGenreName,
-            category: category
+            category: category,
+            customCategory: nil 
         )
     }
 }

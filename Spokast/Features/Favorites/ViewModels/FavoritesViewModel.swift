@@ -26,6 +26,7 @@ protocol FavoritesViewModelProtocol: AnyObject {
     func loadFavorites()
     func filter(by genre: String?)
     func getPodcastDomainObject(at indexPath: IndexPath) -> Podcast?
+    func updatePodcastCategory(podcastId: Int, newCategory: String?)
 }
 
 // MARK: - ViewModel
@@ -92,6 +93,18 @@ final class FavoritesViewModel: FavoritesViewModelProtocol {
         )
     }
     
+    func updatePodcastCategory(podcastId: Int, newCategory: String?) {
+        Task {
+            do {
+                try await libraryService.updateCategory(for: podcastId, to: newCategory)
+                fetchLocalData()
+                
+            } catch {
+                print("❌ Error updating category: \(error)")
+            }
+        }
+    }
+    
     // MARK: - Private Methods
     private func fetchLocalData() {
         do {
@@ -143,13 +156,16 @@ final class FavoritesViewModel: FavoritesViewModelProtocol {
     // MARK: - Grouping & Mapping Logic
     private func createSections(from podcasts: [SavedPodcast]) -> [FavoritesSection] {
         let items: [FavoriteItem] = podcasts.map { podcast in
-            FavoriteItem(
+            
+            let displayGenre = podcast.customCategory ?? podcast.primaryGenreName ?? "Uncategorized"
+            
+            return FavoriteItem(
                 collectionId: podcast.collectionId,
                 title: podcast.collectionName,
                 artist: podcast.artistName,
                 artworkUrl: podcast.artworkUrl600,
                 feedUrl: podcast.feedUrl,
-                genre: podcast.primaryGenreName ?? "Uncategorized"
+                genre: displayGenre
             )
         }
         
