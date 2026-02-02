@@ -61,6 +61,7 @@ final class FavoritesViewModel: FavoritesViewModelProtocol {
     }
     
     // MARK: - Methods
+    
     func loadFavorites() {
         fetchLocalData()
         Task {
