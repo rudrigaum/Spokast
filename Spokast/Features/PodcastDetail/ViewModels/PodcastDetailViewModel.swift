@@ -14,22 +14,28 @@ final class PodcastDetailViewModel {
     // MARK: - Properties
     let podcast: Podcast
     private let repository: PodcastRepositoryProtocol
-    private let audioPlayerService: AudioPlayerServiceProtocol
     private let favoritesRepository: FavoritesRepositoryProtocol
+    private let audioPlayerService: AudioPlayerServiceProtocol
     private let downloadService: DownloadServiceProtocol
+    private let libraryService: LibraryServiceProtocol
 
     private var downloadStatuses: [URL: DownloadStatus] = [:]
     private var cancellables = Set<AnyCancellable>()
+
     private var allEpisodes: [Episode] = []
+    private var playedEpisodeIds: Set<Int> = []
+    private var currentSearchQuery: String = ""
     
     // MARK: - Outputs
     @Published private(set) var episodes: [Episode] = []
     @Published private(set) var errorMessage: String?
     @Published private(set) var currentPlayingEpisodeId: Int? = nil
     @Published private(set) var isPlayerPaused: Bool = false
-    @Published private(set) var isFavorite: Bool = false
     @Published var isPlaying: Bool = false
     @Published var currentPlayingID: Int?
+    
+    @Published private(set) var isFavorite: Bool = false
+    @Published private(set) var shouldHidePlayed: Bool = false
     @Published var onDownloadsUpdate: Void?
     
     // MARK: - Initialization
@@ -37,13 +43,15 @@ final class PodcastDetailViewModel {
         podcast: Podcast,
         repository: PodcastRepositoryProtocol = PodcastRepository(),
         favoritesRepository: FavoritesRepositoryProtocol,
-        audioPlayerService: AudioPlayerServiceProtocol? = nil, // 👈 Mudança aqui
+        libraryService: LibraryServiceProtocol? = nil,
+        audioPlayerService: AudioPlayerServiceProtocol? = nil,
         downloadService: DownloadServiceProtocol = DownloadService()
     ) {
         
         self.podcast = podcast
         self.repository = repository
         self.favoritesRepository = favoritesRepository
+        self.libraryService = libraryService ?? LibraryService()
         self.downloadService = downloadService
         self.audioPlayerService = audioPlayerService ?? AudioPlayerService.shared
         
@@ -81,31 +89,79 @@ final class PodcastDetailViewModel {
         
         Task {
             do {
-                let fetchedEpisodes = try await repository.fetchEpisodes(for: id)
+                async let fetchedEpisodes = try repository.fetchEpisodes(for: id)
+                async let localPlayedIds = try libraryService.getPlayedEpisodeIds(for: id)
+                
+                let episodes = try await fetchedEpisodes
+                let playedIds = try await localPlayedIds
                 
                 await MainActor.run {
-                    self.allEpisodes = fetchedEpisodes
-                    self.episodes = fetchedEpisodes
+                    self.allEpisodes = episodes
+                    self.playedEpisodeIds = playedIds // Atualiza cache
+                    self.applyFilters() // 👈 Aplica filtro inicial
                 }
             } catch {
                 await MainActor.run {
                     self.errorMessage = "Could not load episodes."
-                    print("❌ Error fetching episodes via RSS: \(error)")
+                    print("❌ Error fetching data: \(error)")
                 }
             }
         }
     }
     
-    // MARK: - Filtering Logic
+    // MARK: - Filtering Logic (Unified)
     func filterEpisodes(with query: String) {
-        if query.isEmpty {
-            self.episodes = self.allEpisodes
-        } else {
-            self.episodes = self.allEpisodes.filter { episode in
-                let matchesTitle = episode.trackName.localizedCaseInsensitiveContains(query)
-                let matchesDescription = episode.description?.localizedCaseInsensitiveContains(query) ?? false
-                
+        self.currentSearchQuery = query
+        applyFilters()
+    }
+    
+    func toggleHidePlayed() {
+        shouldHidePlayed.toggle()
+        applyFilters()
+    }
+    
+    private func applyFilters() {
+        var result = allEpisodes
+        
+        if !currentSearchQuery.isEmpty {
+            result = result.filter { episode in
+                let matchesTitle = episode.trackName.localizedCaseInsensitiveContains(currentSearchQuery)
+                let matchesDescription = episode.description?.localizedCaseInsensitiveContains(currentSearchQuery) ?? false
                 return matchesTitle || matchesDescription
+            }
+        }
+        
+        if shouldHidePlayed {
+            result = result.filter { !playedEpisodeIds.contains($0.trackId) }
+        }
+        
+        self.episodes = result
+    }
+    
+    // MARK: - Played Status Logic
+    func isEpisodePlayed(_ episode: Episode) -> Bool {
+        return playedEpisodeIds.contains(episode.trackId)
+    }
+    
+    func togglePlayedStatus(for episode: Episode) {
+        if playedEpisodeIds.contains(episode.trackId) {
+            playedEpisodeIds.remove(episode.trackId)
+        } else {
+            playedEpisodeIds.insert(episode.trackId)
+        }
+        applyFilters() // Re-filtra a lista imediatamente
+        
+        Task {
+            do {
+                let confirmedStatus = try await libraryService.toggleEpisodePlayedStatus(episode)
+                
+                if confirmedStatus {
+                    playedEpisodeIds.insert(episode.trackId)
+                } else {
+                    playedEpisodeIds.remove(episode.trackId)
+                }
+            } catch {
+                print("❌ Error toggling played status: \(error)")
             }
         }
     }
@@ -190,6 +246,13 @@ final class PodcastDetailViewModel {
     
     // MARK: - Private Setup & Helpers
     private func setupAudioObserver() {
+        bindPlayerState()
+        bindCurrentEpisode()
+        bindPlaybackFinished()
+    }
+    
+    // MARK: - Bindings Helpers
+    private func bindPlayerState() {
         audioPlayerService.playerStatePublisher
             .receive(on: DispatchQueue.main)
             .map { state -> Bool in
@@ -198,11 +261,38 @@ final class PodcastDetailViewModel {
             }
             .assign(to: \.isPlaying, on: self)
             .store(in: &cancellables)
-        
+    }
+    
+    private func bindCurrentEpisode() {
         audioPlayerService.currentEpisodePublisher
             .receive(on: DispatchQueue.main)
             .map { $0?.id }
             .assign(to: \.currentPlayingID, on: self)
             .store(in: &cancellables)
+    }
+    
+    private func bindPlaybackFinished() {
+        audioPlayerService.playbackDidEndPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.handlePlaybackFinished()
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func handlePlaybackFinished() {
+        guard let playingId = currentPlayingID else {
+            return
+        }
+        
+        guard let episode = episodes.first(where: { $0.id == playingId }) else {
+            return
+        }
+        
+        if isEpisodePlayed(episode) {
+            return
+        }
+        
+        togglePlayedStatus(for: episode)
     }
 }

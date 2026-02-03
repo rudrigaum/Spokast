@@ -23,6 +23,7 @@ protocol AudioPlayerServiceProtocol {
     var progressPublisher: PassthroughSubject<(currentTime: Double, duration: Double), Never> { get }
     var currentEpisodePublisher: CurrentValueSubject<Episode?, Never> { get }
     var playbackRatePublisher: CurrentValueSubject<Float, Never> { get }
+    var playbackDidEndPublisher: PassthroughSubject<Void, Never> { get }
     
     var currentEpisode: Episode? { get }
     var currentPodcastImageURL: URL? { get }
@@ -52,6 +53,8 @@ final class AudioPlayerService: NSObject, AudioPlayerServiceProtocol {
     let progressPublisher = PassthroughSubject<(currentTime: Double, duration: Double), Never>()
     let currentEpisodePublisher = CurrentValueSubject<Episode?, Never>(nil)
     let playbackRatePublisher = CurrentValueSubject<Float, Never>(1.0)
+    let playbackDidEndPublisher = PassthroughSubject<Void, Never>()
+    private var didEndObserverToken: NSObjectProtocol?
     
     var currentEpisode: Episode? {
         didSet { currentEpisodePublisher.send(currentEpisode) }
@@ -69,6 +72,10 @@ final class AudioPlayerService: NSObject, AudioPlayerServiceProtocol {
         }
     }
     
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+    
     // MARK: - Main Methods
     func play(episode: Episode, from podcast: Podcast) {
         self.currentEpisode = episode
@@ -76,8 +83,14 @@ final class AudioPlayerService: NSObject, AudioPlayerServiceProtocol {
         let artworkString = episode.artworkUrl600 ?? episode.artworkUrl160 ?? podcast.artworkUrl600 ?? podcast.artworkUrl100 ?? ""
         self.currentPodcastImageURL = URL(string: artworkString)
         
-        if let previewUrl = episode.previewUrl, let url = URL(string: previewUrl) {
+        if let url = episode.streamUrl {
             self.play(url: url)
+        }
+        
+        else if let previewUrl = episode.previewUrl, let url = URL(string: previewUrl) {
+            self.play(url: url)
+        } else {
+            print("❌ AudioPlayerService: No valid audio URL found for episode '\(episode.trackName)'")
         }
     }
     
@@ -92,7 +105,10 @@ final class AudioPlayerService: NSObject, AudioPlayerServiceProtocol {
         stop()
         
         let playerItem = AVPlayerItem(url: url)
+        
         setupDurationObserver(for: playerItem)
+        setupDidEndObserver(for: playerItem)
+        
         player = AVPlayer(playerItem: playerItem)
         player?.play()
         
@@ -124,6 +140,12 @@ final class AudioPlayerService: NSObject, AudioPlayerServiceProtocol {
         removePeriodicTimeObserver()
         durationObservation?.invalidate()
         durationObservation = nil
+        
+        if let token = didEndObserverToken {
+            NotificationCenter.default.removeObserver(token)
+            didEndObserverToken = nil
+        }
+        
         player = nil
         playerStatePublisher.send(.stopped)
     }
@@ -143,6 +165,43 @@ final class AudioPlayerService: NSObject, AudioPlayerServiceProtocol {
         let cmTime = CMTime(seconds: time, preferredTimescale: 1000)
         player?.seek(to: cmTime)
         updateNowPlayingInfo()
+    }
+    
+    // MARK: - Did End Observer
+    private func setupDidEndObserver(for item: AVPlayerItem) {
+        if let token = didEndObserverToken {
+            NotificationCenter.default.removeObserver(token)
+        }
+        
+        didEndObserverToken = NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemDidPlayToEndTime,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            
+            guard let object = notification.object as? AVPlayerItem else { return }
+            
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
+                
+                
+                if object == self.player?.currentItem {
+                    self.handlePlaybackEnded()
+                }
+            }
+        }
+    }
+    
+    private func handlePlaybackEnded() {
+        playbackDidEndPublisher.send()
+        player?.seek(to: .zero)
+        playerStatePublisher.send(.stopped)
+    }
+    
+    @objc private func playerDidFinishPlaying(note: NSNotification) {
+        print("🎵 AudioPlayerService: Playback Finished")
+        playbackDidEndPublisher.send()
+        playerStatePublisher.send(.stopped)
     }
     
     // MARK: - Private Setup (Audio & Remote Commands) 🛠️

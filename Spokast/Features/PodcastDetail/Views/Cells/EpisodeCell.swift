@@ -119,7 +119,13 @@ final class EpisodeCell: UITableViewCell {
     }
     
     // MARK: - Configuration
-    func configure(with episode: Episode, downloadStatus: DownloadButton.State, podcastArtURL: URL?, isPlaying: Bool) {
+    func configure(
+        with episode: Episode,
+        downloadStatus: DownloadButton.State,
+        podcastArtURL: URL?,
+        isPlaying: Bool,
+        isPlayed: Bool
+    ) {
         titleLabel.text = episode.trackName
         
         let dateString = EpisodeCell.releaseDateFormatter.string(from: episode.releaseDate)
@@ -157,6 +163,14 @@ final class EpisodeCell: UITableViewCell {
         
         updatePlaybackState(isPlaying: isPlaying)
         downloadButton.updateState(downloadStatus)
+        
+        if isPlayed {
+            contentView.alpha = 0.5
+            accessoryType = .checkmark
+        } else {
+            contentView.alpha = 1.0
+            accessoryType = .none
+        }
     }
     
     // MARK: - Helpers

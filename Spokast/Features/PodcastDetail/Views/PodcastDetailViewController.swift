@@ -63,6 +63,7 @@ final class PodcastDetailViewController: UIViewController {
         setupActions()
         setupBindings()
         setupSearchController()
+        setupFilterButton()
         
         viewModel.fetchEpisodes()
     }
@@ -110,6 +111,24 @@ final class PodcastDetailViewController: UIViewController {
         viewModel.didTapSubscribe()
     }
     
+    private func setupFilterButton() {
+        let filterAction = UIAction { [weak self] _ in
+            self?.viewModel.toggleHidePlayed()
+        }
+        
+        let button = UIBarButtonItem(
+            image: UIImage(systemName: "eye"),
+            primaryAction: filterAction
+        )
+        
+        if var rightItems = navigationItem.rightBarButtonItems {
+            rightItems.append(button)
+            navigationItem.rightBarButtonItems = rightItems
+        } else {
+            navigationItem.rightBarButtonItem = button
+        }
+    }
+    
     // MARK: - Bindings
     private func setupBindings() {
         bindEpisodes()
@@ -117,6 +136,7 @@ final class PodcastDetailViewController: UIViewController {
         bindPlayerState()
         bindSubscriptionState()
         bindDownloads()
+        bindNavigationState()
     }
     
     private func bindEpisodes() {
@@ -170,6 +190,16 @@ final class PodcastDetailViewController: UIViewController {
             .compactMap { $0 }
             .sink { [weak self] _ in
                 self?.updateVisibleCellsDownloadState()
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func bindNavigationState() {
+        viewModel.$shouldHidePlayed
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] shouldHide in
+                let iconName = shouldHide ? "eye.slash.fill" : "eye"
+                self?.navigationItem.rightBarButtonItem?.image = UIImage(systemName: iconName)
             }
             .store(in: &cancellables)
     }
@@ -252,11 +282,14 @@ extension PodcastDetailViewController: UITableViewDataSource {
         let isPlayingThisEpisode = viewModel.isPlaying && (viewModel.currentPlayingID == episode.id)
         let downloadStatus = viewModel.getDownloadStatus(for: episode)
         
+        let isPlayed = viewModel.isEpisodePlayed(episode)
+        
         cell.configure(
             with: episode,
             downloadStatus: downloadStatus,
             podcastArtURL: podcastArtURL,
-            isPlaying: isPlayingThisEpisode
+            isPlaying: isPlayingThisEpisode,
+            isPlayed: isPlayed 
         )
         
         cell.onPlayTap = { [weak self] in
@@ -283,6 +316,27 @@ extension PodcastDetailViewController: UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
         return 300
+    }
+    
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        guard indexPath.row < viewModel.episodes.count else { return nil }
+        
+        let episode = viewModel.episodes[indexPath.row]
+        let isPlayed = viewModel.isEpisodePlayed(episode)
+        
+        let actionTitle = isPlayed ? "Mark Unplayed" : "Mark Played"
+        let color = isPlayed ? UIColor.systemOrange : UIColor.systemGreen
+        let iconName = isPlayed ? "circle" : "checkmark.circle.fill"
+        
+        let toggleAction = UIContextualAction(style: .normal, title: actionTitle) { [weak self] _, _, completion in
+            self?.viewModel.togglePlayedStatus(for: episode)
+            completion(true)
+        }
+        
+        toggleAction.backgroundColor = color
+        toggleAction.image = UIImage(systemName: iconName)
+        
+        return UISwipeActionsConfiguration(actions: [toggleAction])
     }
 }
 
