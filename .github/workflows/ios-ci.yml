@@ -26,9 +26,12 @@ jobs:
       - name: Run Tests
         run: |
           DEVICE_ID=$(xcrun simctl list devices available "iPhone 16" | grep "iPhone 16 (" | head -n 1 | awk -F '[()]' '{print $2}')
-        
+          
+          xcrun simctl boot $DEVICE_ID || true
+          
           xcodebuild test \
             -scheme Spokast \
             -destination "platform=iOS Simulator,id=$DEVICE_ID" \
             -enableCodeCoverage YES \
+            -resultBundlePath TestResults \
             clean test
