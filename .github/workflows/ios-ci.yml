@@ -12,7 +12,7 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - name: Checkout do Código
+      - name: Code checkout
         uses: actions/checkout@v4
 
       - name: Setup Xcode
@@ -20,10 +20,13 @@ jobs:
         with:
           xcode-version: '16.0'
 
-      - name: Rodar Testes
+      - name: List Available Simulators
+        run: xcrun simctl list devices available
+            
+      - name: Run Tests
         run: |
           xcodebuild test \
             -scheme Spokast \
-            -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
+            -destination 'platform=iOS Simulator,name=iPhone 15' \
             -enableCodeCoverage YES \
             clean test
