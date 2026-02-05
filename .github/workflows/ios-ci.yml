@@ -19,7 +19,7 @@ jobs:
         run: |
           xcodebuild test \
             -scheme Spokast \
-            -destination "platform=iOS Simulator,OS=latest,name=Any iPhone" \
+            -destination "platform=iOS Simulator,name=iPhone 16,OS=18.5" \
             -enableCodeCoverage YES \
             -resultBundlePath TestResults \
             clean test
