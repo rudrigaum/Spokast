@@ -9,21 +9,34 @@ on:
 jobs:
   unit-tests:
     name: Unit Tests & Build
-    runs-on: macos-15
+    runs-on: macos-latest
 
     steps:
       - name: Code checkout
         uses: actions/checkout@v4
-            
-      - name: Run Tests
+
+      - name: Cache Derived Data & SPM
+        uses: actions/cache@v4
+        with:
+          path: DerivedData
+          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      - name: Prepare Simulator
         run: |
           DEVICE_ID=$(xcrun simctl list devices available "iPhone 16" | grep "iPhone 16 (" | head -n 1 | awk -F '[()]' '{print $2}')
+          echo "DEVICE_ID=$DEVICE_ID" >> $GITHUB_ENV
+          echo "🚀 Target Simulator ID: $DEVICE_ID"
           
           xcrun simctl boot $DEVICE_ID || true
-          
+
+      - name: Run Tests
+        run: |
           xcodebuild test \
             -scheme Spokast \
-            -destination "platform=iOS Simulator,id=$DEVICE_ID" \
+            -destination "platform=iOS Simulator,id=${{ env.DEVICE_ID }}" \
+            -derivedDataPath DerivedData \
             -enableCodeCoverage YES \
             -resultBundlePath TestResults \
             clean test
