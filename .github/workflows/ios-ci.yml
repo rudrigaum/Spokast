@@ -31,7 +31,16 @@ jobs:
       - name: SonarCloud Scan
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}    
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           brew install sonar-scanner
-          sonar-scanner -Dsonar.token=$SONAR_TOKEN
+        
+          sonar-scanner \
+            -Dsonar.organization=Rodrigo Cerqueira \
+            -Dsonar.projectKey=rudrigaum \
+            -Dsonar.sources=. \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.exclusions="**/DerivedData/**,**/Pods/**,**/Fastlane/**,**/*.json,**/*.xml,**/*.xib,**/*.storyboard" \
+            -Dsonar.tests=. \
+            -Dsonar.test.inclusions="**/*Tests.swift" \
+            -Dsonar.token=$SONAR_TOKEN
