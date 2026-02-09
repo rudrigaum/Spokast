@@ -14,12 +14,26 @@ jobs:
     steps:
       - name: Code checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Cache Derived Data & SPM
+        uses: actions/cache@v4
+        with:
+          path: DerivedData
+          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+            
+      - name: Prepare Simulator
+        run: |
+          xcrun simctl boot "iPhone 16" || true
             
       - name: Run Tests
         run: |
           xcodebuild test \
             -scheme Spokast \
-            -destination "platform=iOS Simulator,id=${{ env.DEVICE_ID }}" \
+            -destination "platform=iOS Simulator,name=iPhone 16" \
             -derivedDataPath DerivedData \
             -enableCodeCoverage YES \
             -resultBundlePath TestResults \
