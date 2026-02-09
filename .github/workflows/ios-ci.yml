@@ -17,16 +17,15 @@ jobs:
             
       - name: Run Tests
         run: |
-          DEVICE_ID=$(xcrun simctl list devices available "iPhone 16" | grep "iPhone 16 (" | head -n 1 | awk -F '[()]' '{print $2}')
-          
-          xcrun simctl boot $DEVICE_ID || true
-          
           xcodebuild test \
             -scheme Spokast \
-            -destination "platform=iOS Simulator,id=$DEVICE_ID" \
+            -destination "platform=iOS Simulator,id=${{ env.DEVICE_ID }}" \
+            -derivedDataPath DerivedData \
             -enableCodeCoverage YES \
             -resultBundlePath TestResults \
-            clean test
+            -only-testing:SpokastTests \
+            -disable-concurrent-destination-testing \
+            test
             
       - name: SonarCloud Scan
         env:
