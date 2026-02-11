@@ -46,9 +46,16 @@ jobs:
           brew tap a7ex/homebrew-formulae
           brew install xcresultparser
           
-          ls -d TestResults.xcresult || echo "🚨 ALERT: TestResults.xcresult not found!"
-        
-          xcresultparser --output-format sonar --project-root . TestResults.xcresult > coverage.xml
+          XC_PATH=$(find . -name "*.xcresult" -type d | head -n 1)
+          
+          echo "📍 Found xcresult at: $XC_PATH"
+          
+          if [ -z "$XC_PATH" ]; then
+            echo "❌ Error: No .xcresult file found!"
+            exit 1
+          fi
+          
+          xcresultparser --output-format sonar --project-root . "$XC_PATH" > coverage.xml
           
           echo "--- coverage.xml CONTENT (Head) ---"
           head -n 20 coverage.xml
