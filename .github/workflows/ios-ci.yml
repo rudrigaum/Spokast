@@ -44,8 +44,8 @@ jobs:
       - name: Convert Coverage Report
         run: |
           brew tap a7ex/homebrew-formulae
-          brew install xcresultparser          
-          xcresultparser --output-format sonar TestResults > coverage.xml
+          brew install xcresultparser
+          xcresultparser --output-format sonar TestResults.xcresult > coverage.xml
 
       - name: SonarCloud Scan
         env:
@@ -59,7 +59,7 @@ jobs:
             -Dsonar.projectKey="rudrigaum_Spokast" \
             -Dsonar.sources=. \
             -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.exclusions="**/DerivedData/**,**/Pods/**,**/Fastlane/**,**/*.json,**/*.xml,**/*.xib,**/*.storyboard" \
+            -Dsonar.exclusions="**/DerivedData/**,**/Pods/**,**/Fastlane/**,**/*.json,**/*.xml,**/*.xib,**/*.storyboard,**/TestResults.xcresult/**" \
             -Dsonar.tests=. \
             -Dsonar.test.inclusions="**/*Tests.swift" \
             -Dsonar.coverageReportPaths="coverage.xml" \
