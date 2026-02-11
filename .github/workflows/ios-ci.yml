@@ -45,7 +45,14 @@ jobs:
         run: |
           brew tap a7ex/homebrew-formulae
           brew install xcresultparser
-          xcresultparser --output-format sonar TestResults.xcresult > coverage.xml
+          
+          ls -d TestResults.xcresult || echo "🚨 ALERT: TestResults.xcresult not found!"
+        
+          xcresultparser --output-format sonar --project-root . TestResults.xcresult > coverage.xml
+          
+          echo "--- coverage.xml CONTENT (Head) ---"
+          head -n 20 coverage.xml
+          echo "-----------------------------------"
 
       - name: SonarCloud Scan
         env:
