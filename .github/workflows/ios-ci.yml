@@ -40,7 +40,13 @@ jobs:
             -only-testing:SpokastTests \
             -disable-concurrent-destination-testing \
             test
-            
+
+      - name: Convert Coverage Report
+        run: |
+          brew tap a7ex/homebrew-formulae
+          brew install xcresultparser          
+          xcresultparser --output-format sonar TestResults > coverage.xml
+
       - name: SonarCloud Scan
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -56,4 +62,5 @@ jobs:
             -Dsonar.exclusions="**/DerivedData/**,**/Pods/**,**/Fastlane/**,**/*.json,**/*.xml,**/*.xib,**/*.storyboard" \
             -Dsonar.tests=. \
             -Dsonar.test.inclusions="**/*Tests.swift" \
+            -Dsonar.coverageReportPaths="coverage.xml" \
             -Dsonar.token=$SONAR_TOKEN
