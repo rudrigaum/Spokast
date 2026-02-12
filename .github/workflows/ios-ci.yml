@@ -46,8 +46,8 @@ jobs:
           brew tap a7ex/homebrew-formulae
           brew install xcresultparser
           
+          # Find the .xcresult bundle
           XC_PATH=$(find . -name "*.xcresult" -type d | head -n 1)
-          
           echo "📍 Found xcresult at: $XC_PATH"
           
           if [ -z "$XC_PATH" ]; then
@@ -55,11 +55,20 @@ jobs:
             exit 1
           fi
           
+          # Convert to Sonar XML
+          # --project-root . garante caminhos relativos (src/...)
           xcresultparser --output-format sonar --project-root . "$XC_PATH" > coverage.xml
           
-          echo "--- coverage.xml CONTENT (Head) ---"
-          head -n 20 coverage.xml
-          echo "-----------------------------------"
+          # Check file size (if 0 bytes, something failed)
+          if [ ! -s coverage.xml ]; then
+            echo "❌ Error: coverage.xml is empty!"
+            exit 1
+          fi
+          
+          # Print first few lines for debug visibility in logs
+          echo "--- XML HEADER ---"
+          head -n 5 coverage.xml
+          echo "------------------"
 
       - name: SonarCloud Scan
         env:
