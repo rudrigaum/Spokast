@@ -41,35 +41,6 @@ jobs:
             -disable-concurrent-destination-testing \
             test
 
-      - name: Convert Coverage Report
-        run: |
-          brew tap a7ex/homebrew-formulae
-          brew install xcresultparser
-          
-          # Find the .xcresult bundle
-          XC_PATH=$(find . -name "*.xcresult" -type d | head -n 1)
-          echo "📍 Found xcresult at: $XC_PATH"
-          
-          if [ -z "$XC_PATH" ]; then
-            echo "❌ Error: No .xcresult file found!"
-            exit 1
-          fi
-          
-          # Convert to Sonar XML
-          # --project-root . garante caminhos relativos (src/...)
-          xcresultparser --output-format sonar --project-root . "$XC_PATH" > coverage.xml
-          
-          # Check file size (if 0 bytes, something failed)
-          if [ ! -s coverage.xml ]; then
-            echo "❌ Error: coverage.xml is empty!"
-            exit 1
-          fi
-          
-          # Print first few lines for debug visibility in logs
-          echo "--- XML HEADER ---"
-          head -n 5 coverage.xml
-          echo "------------------"
-
       - name: SonarCloud Scan
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -85,5 +56,5 @@ jobs:
             -Dsonar.exclusions="**/DerivedData/**,**/Pods/**,**/Fastlane/**,**/*.json,**/*.xml,**/*.xib,**/*.storyboard,**/TestResults.xcresult/**" \
             -Dsonar.tests=. \
             -Dsonar.test.inclusions="**/*Tests.swift" \
-            -Dsonar.coverageReportPaths="coverage.xml" \
             -Dsonar.token=$SONAR_TOKEN
+            # -Dsonar.coverageReportPaths="coverage.xml"
