@@ -14,16 +14,47 @@ jobs:
     steps:
       - name: Code checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Cache Derived Data & SPM
+        uses: actions/cache@v4
+        with:
+          path: DerivedData
+          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+            
+      - name: Prepare Simulator
+        run: |
+          xcrun simctl boot "iPhone 16" || true
             
       - name: Run Tests
         run: |
-          DEVICE_ID=$(xcrun simctl list devices available "iPhone 16" | grep "iPhone 16 (" | head -n 1 | awk -F '[()]' '{print $2}')
-          
-          xcrun simctl boot $DEVICE_ID || true
-          
           xcodebuild test \
             -scheme Spokast \
-            -destination "platform=iOS Simulator,id=$DEVICE_ID" \
+            -destination "platform=iOS Simulator,name=iPhone 16" \
+            -derivedDataPath DerivedData \
             -enableCodeCoverage YES \
             -resultBundlePath TestResults \
-            clean test
+            -only-testing:SpokastTests \
+            -disable-concurrent-destination-testing \
+            test
+
+      - name: SonarCloud Scan
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          brew install sonar-scanner
+        
+          sonar-scanner \
+            -Dsonar.organization="rudrigaum" \
+            -Dsonar.projectKey="rudrigaum_Spokast" \
+            -Dsonar.sources=. \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.exclusions="**/DerivedData/**,**/Pods/**,**/Fastlane/**,**/*.json,**/*.xml,**/*.xib,**/*.storyboard,**/TestResults.xcresult/**" \
+            -Dsonar.tests=. \
+            -Dsonar.test.inclusions="**/*Tests.swift" \
+            -Dsonar.token=$SONAR_TOKEN
+            # -Dsonar.coverageReportPaths="coverage.xml"
