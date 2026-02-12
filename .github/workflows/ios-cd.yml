@@ -1,0 +1,50 @@
+name: iOS CD (Release Build)
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-package:
+    name: Build & Package IPA
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout do Código
+        uses: actions/checkout@v4
+
+      - name: Cache Derived Data & SPM
+        uses: actions/cache@v4
+        with:
+          path: DerivedData
+          key: ${{ runner.os }}-spm-cd-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-cd-
+
+      - name: Build Archive
+        run: |
+          xcodebuild archive \
+            -scheme Spokast \
+            -destination "generic/platform=iOS" \
+            -archivePath Spokast.xcarchive \
+            -derivedDataPath DerivedData \
+            -configuration Release \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Create Unsigned IPA
+        run: |
+          mkdir Payload
+          cp -r Spokast.xcarchive/Products/Applications/Spokast.app Payload/
+          zip -r Spokast.ipa Payload
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Spokast-Release-v${{ github.ref_name }}
+          path: |
+            Spokast.ipa
+            Spokast.xcarchive
+          retention-days: 5
