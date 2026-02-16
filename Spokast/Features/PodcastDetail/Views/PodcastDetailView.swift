@@ -10,6 +10,9 @@ import UIKit
 
 final class PodcastDetailView: UIView {
 
+    // MARK: - Actions
+    var didSelectSortOption: ((EpisodeSorting) -> Void)?
+
     // MARK: - UI Components
     lazy var tableView: UITableView = {
         let tableView = UITableView()
@@ -65,12 +68,29 @@ final class PodcastDetailView: UIView {
         return button
     }()
     
-    private lazy var artistStackView: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [artistLabel, subscribeButton])
+    lazy var sortButton: UIButton = {
+        var config = UIButton.Configuration.tinted()
+        config.cornerStyle = .medium
+        config.baseBackgroundColor = .secondarySystemBackground
+        config.baseForegroundColor = .label
+        config.image = UIImage(systemName: "arrow.up.arrow.down")
+        config.imagePlacement = .leading
+        config.imagePadding = 8
+        config.title = "Sort"
+        
+        let button = UIButton(configuration: config)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.heightAnchor.constraint(equalToConstant: 34).isActive = true
+        button.showsMenuAsPrimaryAction = true
+        return button
+    }()
+    
+    private lazy var buttonsStackView: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [subscribeButton, sortButton])
         stack.axis = .horizontal
         stack.spacing = 12
         stack.alignment = .center
-        stack.distribution = .fill
+        stack.distribution = .fillProportionally
         return stack
     }()
     
@@ -84,7 +104,7 @@ final class PodcastDetailView: UIView {
     }()
 
     private lazy var headerStackView: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [imageView, titleLabel, artistStackView, genreLabel])
+        let stack = UIStackView(arrangedSubviews: [imageView, titleLabel, artistLabel, buttonsStackView, genreLabel])
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.axis = .vertical
         stack.spacing = 16
@@ -94,7 +114,7 @@ final class PodcastDetailView: UIView {
     
     private let headerContainerView: UIView = {
         let view = UIView()
-        view.frame = CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 400)
+        view.frame = CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 450)
         return view
     }()
 
@@ -114,7 +134,27 @@ final class PodcastDetailView: UIView {
         titleLabel.text = viewModel.title
         artistLabel.text = viewModel.artist
         genreLabel.text = viewModel.genre.uppercased()
+        configureSortMenu(currentSelection: viewModel.selectedSorting)
+        
         layoutTableHeaderView()
+    }
+
+    private func configureSortMenu(currentSelection: EpisodeSorting) {
+        let actions = EpisodeSorting.allCases.map { sortOption in
+            UIAction(
+                title: sortOption.rawValue,
+                state: sortOption == currentSelection ? .on : .off,
+                handler: { [weak self] _ in
+                    self?.didSelectSortOption?(sortOption)
+                    self?.sortButton.configuration?.title = sortOption.rawValue
+                    self?.configureSortMenu(currentSelection: sortOption)
+                }
+            )
+        }
+        
+        let menu = UIMenu(title: "Sort Episodes By", children: actions)
+        sortButton.menu = menu
+        sortButton.configuration?.title = currentSelection.rawValue
     }
     
     func updateSubscribeButton(isSubscribed: Bool) {
