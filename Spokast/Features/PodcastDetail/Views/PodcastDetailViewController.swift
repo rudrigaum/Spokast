@@ -33,7 +33,7 @@ final class PodcastDetailViewController: UIViewController {
         search.searchResultsUpdater = self
         search.obscuresBackgroundDuringPresentation = false
         search.searchBar.placeholder = "Search episodes"
-        search.hidesNavigationBarDuringPresentation = false 
+        search.hidesNavigationBarDuringPresentation = false
         return search
     }()
     
@@ -102,6 +102,9 @@ final class PodcastDetailViewController: UIViewController {
     // MARK: - Actions Setup
     private func setupActions() {
         customView?.subscribeButton.addTarget(self, action: #selector(didTapSubscribe), for: .touchUpInside)
+        customView?.didSelectSortOption = { [weak self] selectedOption in
+            self?.viewModel.updateSorting(selectedOption)
+        }
     }
     
     @objc private func didTapSubscribe() {
@@ -137,6 +140,16 @@ final class PodcastDetailViewController: UIViewController {
         bindSubscriptionState()
         bindDownloads()
         bindNavigationState()
+        bindSortingState()
+    }
+    
+    private func bindSortingState() {
+        viewModel.$selectedSorting
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] sorting in
+                self?.customView?.configureSortMenu(currentSelection: sorting)
+            }
+            .store(in: &cancellables)
     }
     
     private func bindEpisodes() {
@@ -247,9 +260,10 @@ final class PodcastDetailViewController: UIViewController {
             let cell = getCell(for: episode)
             let sourceButton = cell?.downloadButton
             
-            presentDeleteConfirmation(for: episode, sourceView: sourceButton) { [weak self] in
-                self?.viewModel.deleteEpisode(episode)
-            }
+
+             presentDeleteConfirmation(for: episode, sourceView: sourceButton) { [weak self] in
+                 self?.viewModel.deleteEpisode(episode)
+             }
             
         } else {
             viewModel.toggleDownload(for: episode)
@@ -289,7 +303,7 @@ extension PodcastDetailViewController: UITableViewDataSource {
             downloadStatus: downloadStatus,
             podcastArtURL: podcastArtURL,
             isPlaying: isPlayingThisEpisode,
-            isPlayed: isPlayed 
+            isPlayed: isPlayed
         )
         
         cell.onPlayTap = { [weak self] in
@@ -315,7 +329,7 @@ extension PodcastDetailViewController: UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        return 300
+        return UITableView.automaticDimension
     }
     
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
@@ -340,19 +354,14 @@ extension PodcastDetailViewController: UITableViewDelegate {
     }
 }
 
+// MARK: - Coordinator Delegate
+
 extension PodcastDetailCoordinatorDelegate {
-    
-    func showEpisodeDetails(_ episode: Episode, from podcast: Podcast) {
-        let viewModel = EpisodeDetailViewModel(episode: episode, podcast: podcast)
-        let episodeDetailVC = EpisodeDetailViewController(viewModel: viewModel)
-        
-        navigationController.pushViewController(episodeDetailVC, animated: true)
-    }
+    func showEpisodeDetails(_ episode: Episode, from podcast: Podcast) {}
 }
 
 // MARK: - UISearchResultsUpdating
 extension PodcastDetailViewController: UISearchResultsUpdating {
-
     func updateSearchResults(for searchController: UISearchController) {
         guard let text = searchController.searchBar.text else { return }
         viewModel.filterEpisodes(with: text)

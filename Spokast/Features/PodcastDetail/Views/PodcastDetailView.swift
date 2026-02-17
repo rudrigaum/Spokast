@@ -139,7 +139,7 @@ final class PodcastDetailView: UIView {
         layoutTableHeaderView()
     }
 
-    private func configureSortMenu(currentSelection: EpisodeSorting) {
+    func configureSortMenu(currentSelection: EpisodeSorting) {
         let actions = EpisodeSorting.allCases.map { sortOption in
             UIAction(
                 title: sortOption.rawValue,
