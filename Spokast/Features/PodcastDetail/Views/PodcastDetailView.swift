@@ -12,6 +12,7 @@ final class PodcastDetailView: UIView {
 
     // MARK: - Actions
     var didSelectSortOption: ((EpisodeSorting) -> Void)?
+    var didTapSortButton: (() -> Void)?
 
     // MARK: - UI Components
     lazy var tableView: UITableView = {
@@ -59,12 +60,13 @@ final class PodcastDetailView: UIView {
         config.cornerStyle = .capsule
         config.baseBackgroundColor = .systemPurple
         config.baseForegroundColor = .white
-        config.title = "SUBSCRIBE"
-        config.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16)
+        config.title = "Subscribe"
         
         let button = UIButton(configuration: config)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.heightAnchor.constraint(equalToConstant: 34).isActive = true
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
+        button.titleLabel?.numberOfLines = 1
         return button
     }()
     
@@ -75,13 +77,15 @@ final class PodcastDetailView: UIView {
         config.baseForegroundColor = .label
         config.image = UIImage(systemName: "arrow.up.arrow.down")
         config.imagePlacement = .leading
-        config.imagePadding = 8
+        config.imagePadding = 6
         config.title = "Sort"
+        config.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12)
         
         let button = UIButton(configuration: config)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.heightAnchor.constraint(equalToConstant: 34).isActive = true
-        button.showsMenuAsPrimaryAction = true
+        button.showsMenuAsPrimaryAction = false
+        button.addTarget(self, action: #selector(handleSortTap), for: .touchUpInside)
         return button
     }()
     
@@ -90,7 +94,7 @@ final class PodcastDetailView: UIView {
         stack.axis = .horizontal
         stack.spacing = 12
         stack.alignment = .center
-        stack.distribution = .fillProportionally
+        stack.distribution = .fill
         return stack
     }()
     
@@ -134,43 +138,29 @@ final class PodcastDetailView: UIView {
         titleLabel.text = viewModel.title
         artistLabel.text = viewModel.artist
         genreLabel.text = viewModel.genre.uppercased()
-        configureSortMenu(currentSelection: viewModel.selectedSorting)
-        
         layoutTableHeaderView()
     }
 
-    func configureSortMenu(currentSelection: EpisodeSorting) {
-        let actions = EpisodeSorting.allCases.map { sortOption in
-            UIAction(
-                title: sortOption.rawValue,
-                state: sortOption == currentSelection ? .on : .off,
-                handler: { [weak self] _ in
-                    self?.didSelectSortOption?(sortOption)
-                    self?.sortButton.configuration?.title = sortOption.rawValue
-                    self?.configureSortMenu(currentSelection: sortOption)
-                }
-            )
-        }
-        
-        let menu = UIMenu(title: "Sort Episodes By", children: actions)
-        sortButton.menu = menu
-        sortButton.configuration?.title = currentSelection.rawValue
+    @objc private func handleSortTap() {
+        didTapSortButton?()
     }
     
     func updateSubscribeButton(isSubscribed: Bool) {
         var config = subscribeButton.configuration
+        subscribeButton.titleLabel?.numberOfLines = 1
+        subscribeButton.titleLabel?.adjustsFontSizeToFitWidth = true
         
         if isSubscribed {
             config?.baseBackgroundColor = .systemGray5
             config?.baseForegroundColor = .secondaryLabel
-            config?.title = "SUBSCRIBED"
+            config?.title = "Subscribed"
             config?.image = UIImage(systemName: "checkmark")
-            config?.imagePadding = 6
+            config?.imagePadding = 4
             config?.imagePlacement = .leading
         } else {
             config?.baseBackgroundColor = .systemPurple
             config?.baseForegroundColor = .white
-            config?.title = "SUBSCRIBE"
+            config?.title = "Subscribe"
             config?.image = nil
         }
         

@@ -102,8 +102,8 @@ final class PodcastDetailViewController: UIViewController {
     // MARK: - Actions Setup
     private func setupActions() {
         customView?.subscribeButton.addTarget(self, action: #selector(didTapSubscribe), for: .touchUpInside)
-        customView?.didSelectSortOption = { [weak self] selectedOption in
-            self?.viewModel.updateSorting(selectedOption)
+        customView?.didTapSortButton = { [weak self] in
+            self?.presentSortOptions()
         }
     }
     
@@ -132,6 +132,28 @@ final class PodcastDetailViewController: UIViewController {
         }
     }
     
+    private func presentSortOptions() {
+        let alert = UIAlertController(title: "Sort Episodes By", message: nil, preferredStyle: .actionSheet)
+        
+        for option in EpisodeSorting.allCases {
+            let isSelected = option == viewModel.selectedSorting
+            let title = isSelected ? "✓ \(option.rawValue)" : option.rawValue
+            
+            let action = UIAlertAction(title: title, style: .default) { [weak self] _ in
+                self?.viewModel.updateSorting(option)
+            }
+            alert.addAction(action)
+        }
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        if let popover = alert.popoverPresentationController {
+            popover.sourceView = customView?.sortButton
+            popover.sourceRect = customView?.sortButton.bounds ?? .zero
+        }
+        present(alert, animated: true)
+    }
+    
     // MARK: - Bindings
     private func setupBindings() {
         bindEpisodes()
@@ -140,16 +162,6 @@ final class PodcastDetailViewController: UIViewController {
         bindSubscriptionState()
         bindDownloads()
         bindNavigationState()
-        bindSortingState()
-    }
-    
-    private func bindSortingState() {
-        viewModel.$selectedSorting
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] sorting in
-                self?.customView?.configureSortMenu(currentSelection: sorting)
-            }
-            .store(in: &cancellables)
     }
     
     private func bindEpisodes() {
