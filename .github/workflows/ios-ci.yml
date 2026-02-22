@@ -57,8 +57,8 @@ jobs:
             -Dsonar.projectKey="rudrigaum_Spokast" \
             -Dsonar.sources=. \
             -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.exclusions="**/DerivedData/**,**/Pods/**,**/Fastlane/**,**/*.json,**/*.xml,**/*.xib,**/*.storyboard,**/TestResults.xcresult/**" \
+            -Dsonar.exclusions="**/DerivedData/**,**/Pods/**,**/Fastlane/**,**/*.json,**/*.xml,**/*.xib,**/*.storyboard,**/TestResults.xcresult/**,**/*Mocks.swift,**/*View.swift,**/*ViewController.swift" \
             -Dsonar.tests=. \
-            -Dsonar.test.inclusions="**/*Tests.swift" \
+            -Dsonar.test.inclusions="**/*Tests.swift,**/*Mocks.swift" \
             -Dsonar.token=$SONAR_TOKEN \
             -Dsonar.coverageReportPaths="coverage.xml"
