@@ -36,10 +36,14 @@ jobs:
             -destination "platform=iOS Simulator,name=iPhone 16" \
             -derivedDataPath DerivedData \
             -enableCodeCoverage YES \
-            -resultBundlePath TestResults \
+            -resultBundlePath TestResults.xcresult \
             -only-testing:SpokastTests \
             -disable-concurrent-destination-testing \
             test
+
+      - name: Convert xcresult to Sonar XML
+        run: |
+          bash -c "bash <(curl -s https://raw.githubusercontent.com/SonarSource/sonar-scanning-examples/master/swift-coverage/swift-coverage-example/xccov-to-sonarqube-generic.sh) TestResults.xcresult/ > coverage.xml"
 
       - name: SonarCloud Scan
         env:
@@ -56,5 +60,5 @@ jobs:
             -Dsonar.exclusions="**/DerivedData/**,**/Pods/**,**/Fastlane/**,**/*.json,**/*.xml,**/*.xib,**/*.storyboard,**/TestResults.xcresult/**" \
             -Dsonar.tests=. \
             -Dsonar.test.inclusions="**/*Tests.swift" \
-            -Dsonar.token=$SONAR_TOKEN
-            # -Dsonar.coverageReportPaths="coverage.xml"
+            -Dsonar.token=$SONAR_TOKEN \
+            -Dsonar.coverageReportPaths="coverage.xml"
