@@ -9,7 +9,7 @@ import Foundation
 import Combine
 
 @MainActor
-final class PodcastDetailViewModel {
+final class PodcastDetailViewModel: ObservableObject {
     
     // MARK: - Properties
     let podcast: Podcast
@@ -33,10 +33,15 @@ final class PodcastDetailViewModel {
     @Published private(set) var isPlayerPaused: Bool = false
     @Published var isPlaying: Bool = false
     @Published var currentPlayingID: Int?
-    
     @Published private(set) var isFavorite: Bool = false
     @Published private(set) var shouldHidePlayed: Bool = false
     @Published var onDownloadsUpdate: Void?
+    
+    @Published var selectedSorting: EpisodeSorting = .dateNewest {
+        didSet {
+            applyFilters()
+        }
+    }
     
     // MARK: - Initialization
     init(
@@ -97,8 +102,8 @@ final class PodcastDetailViewModel {
                 
                 await MainActor.run {
                     self.allEpisodes = episodes
-                    self.playedEpisodeIds = playedIds // Atualiza cache
-                    self.applyFilters() // 👈 Aplica filtro inicial
+                    self.playedEpisodeIds = playedIds
+                    self.applyFilters()
                 }
             } catch {
                 await MainActor.run {
@@ -109,7 +114,7 @@ final class PodcastDetailViewModel {
         }
     }
     
-    // MARK: - Filtering Logic (Unified)
+    // MARK: - Filtering & Sorting Logic
     func filterEpisodes(with query: String) {
         self.currentSearchQuery = query
         applyFilters()
@@ -118,6 +123,10 @@ final class PodcastDetailViewModel {
     func toggleHidePlayed() {
         shouldHidePlayed.toggle()
         applyFilters()
+    }
+    
+    func updateSorting(_ sorting: EpisodeSorting) {
+        self.selectedSorting = sorting
     }
     
     private func applyFilters() {
@@ -135,6 +144,7 @@ final class PodcastDetailViewModel {
             result = result.filter { !playedEpisodeIds.contains($0.trackId) }
         }
         
+        result = result.sorted(by: selectedSorting.comparator)
         self.episodes = result
     }
     
@@ -149,7 +159,7 @@ final class PodcastDetailViewModel {
         } else {
             playedEpisodeIds.insert(episode.trackId)
         }
-        applyFilters() // Re-filtra a lista imediatamente
+        applyFilters()
         
         Task {
             do {

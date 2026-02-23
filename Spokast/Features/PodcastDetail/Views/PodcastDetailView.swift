@@ -10,6 +10,10 @@ import UIKit
 
 final class PodcastDetailView: UIView {
 
+    // MARK: - Actions
+    var didSelectSortOption: ((EpisodeSorting) -> Void)?
+    var didTapSortButton: (() -> Void)?
+
     // MARK: - UI Components
     lazy var tableView: UITableView = {
         let tableView = UITableView()
@@ -56,17 +60,37 @@ final class PodcastDetailView: UIView {
         config.cornerStyle = .capsule
         config.baseBackgroundColor = .systemPurple
         config.baseForegroundColor = .white
-        config.title = "SUBSCRIBE"
-        config.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16)
+        config.title = "Subscribe"
         
         let button = UIButton(configuration: config)
         button.translatesAutoresizingMaskIntoConstraints = false
         button.heightAnchor.constraint(equalToConstant: 34).isActive = true
+        button.setContentCompressionResistancePriority(.required, for: .horizontal)
+        button.titleLabel?.numberOfLines = 1
         return button
     }()
     
-    private lazy var artistStackView: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [artistLabel, subscribeButton])
+    lazy var sortButton: UIButton = {
+        var config = UIButton.Configuration.tinted()
+        config.cornerStyle = .medium
+        config.baseBackgroundColor = .secondarySystemBackground
+        config.baseForegroundColor = .label
+        config.image = UIImage(systemName: "arrow.up.arrow.down")
+        config.imagePlacement = .leading
+        config.imagePadding = 6
+        config.title = "Sort"
+        config.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12)
+        
+        let button = UIButton(configuration: config)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.heightAnchor.constraint(equalToConstant: 34).isActive = true
+        button.showsMenuAsPrimaryAction = false
+        button.addTarget(self, action: #selector(handleSortTap), for: .touchUpInside)
+        return button
+    }()
+    
+    private lazy var buttonsStackView: UIStackView = {
+        let stack = UIStackView(arrangedSubviews: [subscribeButton, sortButton])
         stack.axis = .horizontal
         stack.spacing = 12
         stack.alignment = .center
@@ -84,7 +108,7 @@ final class PodcastDetailView: UIView {
     }()
 
     private lazy var headerStackView: UIStackView = {
-        let stack = UIStackView(arrangedSubviews: [imageView, titleLabel, artistStackView, genreLabel])
+        let stack = UIStackView(arrangedSubviews: [imageView, titleLabel, artistLabel, buttonsStackView, genreLabel])
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.axis = .vertical
         stack.spacing = 16
@@ -94,7 +118,7 @@ final class PodcastDetailView: UIView {
     
     private let headerContainerView: UIView = {
         let view = UIView()
-        view.frame = CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 400)
+        view.frame = CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 450)
         return view
     }()
 
@@ -116,21 +140,27 @@ final class PodcastDetailView: UIView {
         genreLabel.text = viewModel.genre.uppercased()
         layoutTableHeaderView()
     }
+
+    @objc private func handleSortTap() {
+        didTapSortButton?()
+    }
     
     func updateSubscribeButton(isSubscribed: Bool) {
         var config = subscribeButton.configuration
+        subscribeButton.titleLabel?.numberOfLines = 1
+        subscribeButton.titleLabel?.adjustsFontSizeToFitWidth = true
         
         if isSubscribed {
             config?.baseBackgroundColor = .systemGray5
             config?.baseForegroundColor = .secondaryLabel
-            config?.title = "SUBSCRIBED"
+            config?.title = "Subscribed"
             config?.image = UIImage(systemName: "checkmark")
-            config?.imagePadding = 6
+            config?.imagePadding = 4
             config?.imagePlacement = .leading
         } else {
             config?.baseBackgroundColor = .systemPurple
             config?.baseForegroundColor = .white
-            config?.title = "SUBSCRIBE"
+            config?.title = "Subscribe"
             config?.image = nil
         }
         

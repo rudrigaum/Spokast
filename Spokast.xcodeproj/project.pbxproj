@@ -28,6 +28,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		18479D342F4716F10042E2C9 /* Spokast.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = Spokast.xctestplan; sourceTree = "<group>"; };
 		187651FA2E8725F200580DBE /* Spokast.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Spokast.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		187652102E8725F600580DBE /* SpokastTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpokastTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		1876521A2E8725F600580DBE /* SpokastUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpokastUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -100,6 +101,7 @@
 		187651F12E8725F200580DBE = {
 			isa = PBXGroup;
 			children = (
+				18479D342F4716F10042E2C9 /* Spokast.xctestplan */,
 				187651FC2E8725F200580DBE /* Spokast */,
 				187652132E8725F600580DBE /* SpokastTests */,
 				1876521D2E8725F600580DBE /* SpokastUITests */,

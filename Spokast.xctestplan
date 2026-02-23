@@ -1,0 +1,37 @@
+{
+  "configurations" : [
+    {
+      "id" : "C7A377F8-9987-42AF-BEAA-07F23D13BC2C",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "performanceAntipatternCheckerEnabled" : true,
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:Spokast.xcodeproj",
+      "identifier" : "187651F92E8725F200580DBE",
+      "name" : "Spokast"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : false,
+      "target" : {
+        "containerPath" : "container:Spokast.xcodeproj",
+        "identifier" : "1876520F2E8725F600580DBE",
+        "name" : "SpokastTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:Spokast.xcodeproj",
+        "identifier" : "187652192E8725F600580DBE",
+        "name" : "SpokastUITests"
+      }
+    }
+  ],
+  "version" : 1
+}

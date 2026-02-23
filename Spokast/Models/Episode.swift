@@ -7,7 +7,9 @@
 
 import Foundation
 
-struct Episode: Codable, Identifiable {
+struct Episode: Codable, Identifiable, Equatable {
+    
+    // MARK: - API Properties
     var id: Int { trackId }
     let trackId: Int
     let trackName: String
@@ -22,9 +24,21 @@ struct Episode: Codable, Identifiable {
     let artworkUrl600: String?
     let artistName: String?
     
+    // MARK: - Local State
+    var downloadDate: Date? = nil
+    var fileSize: Int64? = nil
+    var playbackProgress: Double = 0.0
+    var rating: Int = 0
+    
+    // MARK: - Computed Properties
     var durationInSeconds: Double {
         guard let millis = trackTimeMillis else { return 0.0 }
         return Double(millis) / 1000.0
+    }
+    
+    var timeRemaining: Double {
+        let total = durationInSeconds
+        return max(0, total - playbackProgress)
     }
     
     var streamUrl: URL? {
@@ -34,6 +48,7 @@ struct Episode: Codable, Identifiable {
         return nil
     }
     
+    // MARK: - CodingKeys
     enum CodingKeys: String, CodingKey {
         case trackId
         case trackName
@@ -50,6 +65,7 @@ struct Episode: Codable, Identifiable {
     }
 }
 
+// MARK: - Extensions
 extension Episode {
     var asPodcast: Podcast {
         return Podcast(
