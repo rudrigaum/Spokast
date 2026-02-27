@@ -5,6 +5,7 @@
 //  Created by Rodrigo Cerqueira Reis on 25/01/26.
 //
 
+
 import Foundation
 import UIKit
 
@@ -21,7 +22,8 @@ final class ProfileCoordinator: NavigationCoordinator {
     
     // MARK: - Coordinator Methods
     func start() {
-        let viewModel = ProfileViewModel()
+        let authService = FirebaseAuthService()
+        let viewModel = ProfileViewModel(authService: authService)
         let viewController = ProfileViewController(viewModel: viewModel)
         viewController.title = "Profile"
         navigationController.pushViewController(viewController, animated: false)
