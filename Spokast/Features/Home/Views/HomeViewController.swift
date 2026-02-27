@@ -82,17 +82,16 @@ final class HomeViewController: UIViewController {
             customView.showLoading(false)
         case .error(let message):
             customView.showLoading(false)
-            showErrorAlert(message: message)
+            showAlert(
+                title: "Oops!",
+                message: message,
+                primaryButtonTitle: "Retry",
+                secondaryButtonTitle: "Cancel",
+                primaryAction: { [weak self] in
+                    self?.viewModel.fetchHomeData()
+                }
+            )
         }
-    }
-    
-    private func showErrorAlert(message: String) {
-        let alert = UIAlertController(title: "Oops!", message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "Retry", style: .default, handler: { [weak self] _ in
-            self?.viewModel.fetchHomeData()
-        }))
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        present(alert, animated: true)
     }
 }
 

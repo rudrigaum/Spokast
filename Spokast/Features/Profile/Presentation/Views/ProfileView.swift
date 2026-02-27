@@ -11,7 +11,6 @@ import UIKit
 final class ProfileView: UIView {
     
     // MARK: - UI Components
-    
     private let stackView: UIStackView = {
         let stack = UIStackView()
         stack.axis = .vertical
