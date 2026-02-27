@@ -17,7 +17,10 @@ enum ProfileViewState: Equatable {
 
 @MainActor
 protocol ProfileViewModelProtocol: AnyObject {
+    var state: ProfileViewState { get }
+    var onLoginRequest: (() -> Void)? { get set }
     var statePublisher: Published<ProfileViewState>.Publisher { get }
+    func handleAccountAction()
     func checkAuthStatus()
     func importOPML(from url: URL)
     func logout()
@@ -33,6 +36,9 @@ final class ProfileViewModel: ProfileViewModelProtocol {
     // MARK: - Outputs
     @Published private(set) var state: ProfileViewState = .loading
     var statePublisher: Published<ProfileViewState>.Publisher { $state }
+    
+    var onLoginRequest: (() -> Void)?
+    
     
     // MARK: - Init
     init(authService: AuthServiceProtocol,
@@ -55,6 +61,14 @@ final class ProfileViewModel: ProfileViewModelProtocol {
             } catch {
                 state = .error(message: "Failed to verify session.")
             }
+        }
+    }
+    
+    func handleAccountAction() {
+        if case .unauthenticated = state {
+            onLoginRequest?()
+        } else {
+            logout()
         }
     }
     

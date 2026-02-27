@@ -74,7 +74,7 @@ final class ProfileViewController: UIViewController {
     
     // MARK: - Actions
     @objc private func didTapAuthAction() {
-        viewModel.logout() 
+        viewModel.handleAccountAction()
     }
     
     @objc private func didTapImport() {
