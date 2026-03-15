@@ -27,16 +27,20 @@ final class LoginViewModel: ObservableObject {
     
     @Published var email = ""
     @Published var password = ""
+    @Published var confirmPassword = ""
     @Published var isLoading = false
     @Published var errorMessage: String?
-    @Published var authMode: AuthMode = .signIn
+    @Published var authMode: AuthMode
     
     // MARK: - Dependencies
     private let authService: AuthServiceProtocol
     
+    var onSuccess: (() -> Void)?
+    
     // MARK: - Init
-    init(authService: AuthServiceProtocol) {
+    init(authService: AuthServiceProtocol, initialMode: AuthMode = .signIn) {
         self.authService = authService
+        self.authMode = initialMode 
     }
     
     // MARK: - Actions
@@ -59,9 +63,15 @@ final class LoginViewModel: ObservableObject {
                     _ = try await authService.signUp(email: email, password: password)
                 }
                 isLoading = false
+                onSuccess?()
             } catch {
                 isLoading = false
                 errorMessage = error.localizedDescription
+                let nsError = error as NSError
+                print("====================================")
+                print("🔴 FIREBASE RAW ERROR: \(nsError)")
+                print("🔴 FIREBASE USER INFO: \(nsError.userInfo)")
+                print("====================================")
             }
         }
     }

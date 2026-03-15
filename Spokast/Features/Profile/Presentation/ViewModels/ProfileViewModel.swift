@@ -18,9 +18,9 @@ enum ProfileViewState: Equatable {
 @MainActor
 protocol ProfileViewModelProtocol: AnyObject {
     var state: ProfileViewState { get }
-    var onLoginRequest: (() -> Void)? { get set }
+    var onLoginRequest: ((Bool) -> Void)? { get set }
     var statePublisher: Published<ProfileViewState>.Publisher { get }
-    func handleAccountAction()
+    func handleAccountAction(isSignUp: Bool)
     func checkAuthStatus()
     func importOPML(from url: URL)
     func logout()
@@ -37,7 +37,7 @@ final class ProfileViewModel: ProfileViewModelProtocol {
     @Published private(set) var state: ProfileViewState = .loading
     var statePublisher: Published<ProfileViewState>.Publisher { $state }
     
-    var onLoginRequest: (() -> Void)?
+    var onLoginRequest: ((Bool) -> Void)?
     
     
     // MARK: - Init
@@ -64,9 +64,9 @@ final class ProfileViewModel: ProfileViewModelProtocol {
         }
     }
     
-    func handleAccountAction() {
+    func handleAccountAction(isSignUp: Bool = false) {
         if case .unauthenticated = state {
-            onLoginRequest?()
+            onLoginRequest?(isSignUp)
         } else {
             logout()
         }

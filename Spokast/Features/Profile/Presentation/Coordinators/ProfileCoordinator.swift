@@ -26,17 +26,30 @@ final class ProfileCoordinator: NavigationCoordinator {
         let authService = FirebaseAuthService()
         let viewModel = ProfileViewModel(authService: authService)
         let viewController = ProfileViewController(viewModel: viewModel)
-        viewModel.onLoginRequest = { [weak self] in
-            self?.showAuthFlow()
+        
+        viewModel.onLoginRequest = { [weak self, weak viewModel] isSignUp in
+            let mode: LoginViewModel.AuthMode = isSignUp ? .signUp : .signIn
+            
+            self?.showAuthFlow(with: mode) {
+                viewModel?.checkAuthStatus()
+            }
         }
+        
         viewController.title = "Profile"
         navigationController.pushViewController(viewController, animated: false)
     }
     
-    func showAuthFlow() {
+    func showAuthFlow(with mode: LoginViewModel.AuthMode, onDismiss: @escaping () -> Void) {
         let child = AuthCoordinator(navigationController: navigationController)
         child.parentCoordinator = self
-        self.authCoordinator = child 
+        child.initialMode = mode
+        
+        child.onFinish = { [weak self] in
+            self?.authCoordinator = nil
+            onDismiss()
+        }
+        
+        self.authCoordinator = child
         child.start()
     }
 }

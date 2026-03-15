@@ -14,6 +14,8 @@ final class AuthCoordinator: NavigationCoordinator {
     // MARK: - Properties
     var navigationController: UINavigationController
     weak var parentCoordinator: NavigationCoordinator?
+    var onFinish: (() -> Void)?
+    var initialMode: LoginViewModel.AuthMode = .signIn
     
     // MARK: - Init
     init(navigationController: UINavigationController) {
@@ -23,7 +25,11 @@ final class AuthCoordinator: NavigationCoordinator {
     // MARK: - Coordinator Methods
     func start() {
         let authService = FirebaseAuthService()
-        let viewModel = LoginViewModel(authService: authService)
+        let viewModel = LoginViewModel(authService: authService, initialMode: initialMode)
+        viewModel.onSuccess = { [weak self] in
+            self?.finish()
+        }
+        
         let viewController = LoginViewController(viewModel: viewModel)
         let authNavController = UINavigationController(rootViewController: viewController)
         authNavController.modalPresentationStyle = .pageSheet
@@ -31,6 +37,8 @@ final class AuthCoordinator: NavigationCoordinator {
     }
     
     func finish() {
-        navigationController.dismiss(animated: true)
+        navigationController.dismiss(animated: true) { [weak self] in
+            self?.onFinish?()
+        }
     }
 }

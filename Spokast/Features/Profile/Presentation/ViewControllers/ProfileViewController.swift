@@ -43,8 +43,9 @@ final class ProfileViewController: UIViewController {
     
     // MARK: - Setup
     private func setupActions() {
+        customView.actionButton.addTarget(self, action: #selector(didTapAuthAction(_:)), for: .touchUpInside)
+        customView.createAccountButton.addTarget(self, action: #selector(didTapAuthAction(_:)), for: .touchUpInside)
         customView.backupButton.addTarget(self, action: #selector(didTapImport), for: .touchUpInside)
-        customView.actionButton.addTarget(self, action: #selector(didTapAuthAction), for: .touchUpInside)
     }
     
     private func setupBindings() {
@@ -63,18 +64,20 @@ final class ProfileViewController: UIViewController {
         switch state {
         case .authenticated(_, let message):
             if let successMessage = message {
-                showAlert(title: "Sucesso", message: successMessage)
+                showAlert(title: "Success", message: successMessage)
             }
         case .error(let message):
-            showAlert(title: "Erro", message: message)
+            showAlert(title: "Error", message: message)
         default:
             break
         }
     }
     
     // MARK: - Actions
-    @objc private func didTapAuthAction() {
-        viewModel.handleAccountAction()
+    @objc private func didTapAuthAction(_ sender: UIButton) {
+        let isSignUp = (sender === customView.createAccountButton)
+        print("DEBUG: Clicou em criar conta? \(isSignUp)")
+        viewModel.handleAccountAction(isSignUp: isSignUp)
     }
     
     @objc private func didTapImport() {

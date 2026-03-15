@@ -69,7 +69,6 @@ final class ProfileView: UIView {
     }()
     
     // MARK: - Init
-    
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupView()
@@ -80,7 +79,6 @@ final class ProfileView: UIView {
     }
     
     // MARK: - Setup
-    
     private func setupView() {
         backgroundColor = .systemBackground
         
