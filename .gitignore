@@ -61,7 +61,7 @@ DerivedData/
 xcuserdata/
 
 # Firebase
-GoogleService-Info.plist
+Spokast/GoogleService-Info.plist
 
 # Other
 *.moved-aside

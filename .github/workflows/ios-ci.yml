@@ -44,6 +44,12 @@ jobs:
       - name: Convert xcresult to Sonar XML
         run: |
           bash -c "bash <(curl -s https://raw.githubusercontent.com/SonarSource/sonar-scanning-examples/master/swift-coverage/swift-coverage-example/xccov-to-sonarqube-generic.sh) TestResults.xcresult/ > coverage.xml"
+                      
+      - name: Inject Firebase Configuration
+        env:
+          PLIST_SECRET: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}
+        run: |
+          echo "$PLIST_SECRET" | base64 --decode > Spokast/GoogleService-Info.plist
 
       - name: SonarCloud Scan
         env:
