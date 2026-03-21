@@ -17,10 +17,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         if Bundle.main.url(forResource: "GoogleService-Info", withExtension: "plist") != nil {
                     FirebaseApp.configure()
-                    print("🔥 Firebase configurado com sucesso (Plist encontrado).")
                 } else {
-                    // O Truque de Mestre para a CI/CD: Injetamos configurações FAKE
-                    print("⚠️ Plist não encontrado. Configurando Firebase com dados FAKE para os testes da CI passarem.")
                     let options = FirebaseOptions(googleAppID: "1:123456789012:ios:a1b2c3d4e5f67890", gcmSenderID: "123456789012")
                     options.apiKey = "AIzaSyDummyKeyForTests1234567890"
                     options.projectID = "dummy-project-id"
