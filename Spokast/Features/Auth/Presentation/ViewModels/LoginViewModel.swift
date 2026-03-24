@@ -68,10 +68,6 @@ final class LoginViewModel: ObservableObject {
                 isLoading = false
                 errorMessage = error.localizedDescription
                 let nsError = error as NSError
-                print("====================================")
-                print("🔴 FIREBASE RAW ERROR: \(nsError)")
-                print("🔴 FIREBASE USER INFO: \(nsError.userInfo)")
-                print("====================================")
             }
         }
     }
