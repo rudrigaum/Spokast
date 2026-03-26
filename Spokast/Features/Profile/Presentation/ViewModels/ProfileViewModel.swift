@@ -31,8 +31,8 @@ final class ProfileViewModel: ProfileViewModelProtocol {
     
     // MARK: - Dependencies
     private let authService: AuthServiceProtocol
-    private let importService: OPMLImportService
-    
+    private let importService: OPMLImportServiceProtocol
+
     // MARK: - Outputs
     @Published private(set) var state: ProfileViewState = .loading
     var statePublisher: Published<ProfileViewState>.Publisher { $state }
@@ -42,10 +42,10 @@ final class ProfileViewModel: ProfileViewModelProtocol {
     
     // MARK: - Init
     init(authService: AuthServiceProtocol,
-         importService: OPMLImportService? = nil) {
-        
+         importService: OPMLImportServiceProtocol) {
+
         self.authService = authService
-        self.importService = importService ?? OPMLImportService()
+        self.importService = importService
         checkAuthStatus()
     }
     

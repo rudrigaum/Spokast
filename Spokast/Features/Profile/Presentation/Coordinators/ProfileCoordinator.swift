@@ -24,7 +24,8 @@ final class ProfileCoordinator: NavigationCoordinator {
     // MARK: - Coordinator Methods
     func start() {
         let authService = FirebaseAuthService()
-        let viewModel = ProfileViewModel(authService: authService)
+        let importService = OPMLImportService()
+        let viewModel = ProfileViewModel(authService: authService, importService: importService)
         let viewController = ProfileViewController(viewModel: viewModel)
         
         viewModel.onLoginRequest = { [weak self, weak viewModel] isSignUp in
