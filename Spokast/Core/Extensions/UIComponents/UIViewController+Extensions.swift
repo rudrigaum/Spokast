@@ -37,4 +37,29 @@ extension UIViewController {
         
         present(alert, animated: true)
     }
+    
+    func showAlert(
+            title: String = "Error",
+            message: String,
+            primaryButtonTitle: String = "OK",
+            secondaryButtonTitle: String? = nil,
+            primaryAction: (() -> Void)? = nil,
+            secondaryAction: (() -> Void)? = nil
+        ) {
+            let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+            
+            let primary = UIAlertAction(title: primaryButtonTitle, style: .default) { _ in
+                primaryAction?()
+            }
+            alert.addAction(primary)
+            
+            if let secondaryTitle = secondaryButtonTitle {
+                let secondary = UIAlertAction(title: secondaryTitle, style: .cancel) { _ in
+                    secondaryAction?()
+                }
+                alert.addAction(secondary)
+            }
+            
+            present(alert, animated: true)
+        }
 }

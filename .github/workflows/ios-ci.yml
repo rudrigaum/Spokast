@@ -44,6 +44,12 @@ jobs:
       - name: Convert xcresult to Sonar XML
         run: |
           bash -c "bash <(curl -s https://raw.githubusercontent.com/SonarSource/sonar-scanning-examples/master/swift-coverage/swift-coverage-example/xccov-to-sonarqube-generic.sh) TestResults.xcresult/ > coverage.xml"
+                      
+      - name: Inject Firebase Configuration
+        env:
+          PLIST_SECRET: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}
+        run: |
+          echo "$PLIST_SECRET" | base64 --decode > Spokast/GoogleService-Info.plist
 
       - name: SonarCloud Scan
         env:
@@ -57,8 +63,9 @@ jobs:
             -Dsonar.projectKey="rudrigaum_Spokast" \
             -Dsonar.sources=. \
             -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.exclusions="**/DerivedData/**,**/Pods/**,**/Fastlane/**,**/*.json,**/*.xml,**/*.xib,**/*.storyboard,**/TestResults.xcresult/**,**/*Mocks.swift,**/*View.swift,**/*ViewController.swift" \
+            -Dsonar.exclusions="**/DerivedData/**,**/Pods/**,**/Fastlane/**,**/*.json,**/*.xml,**/*.xib,**/*.storyboard,**/TestResults.xcresult/**" \
+            -Dsonar.coverage.exclusions="**/*View.swift,**/*ViewController.swift,**/*Coordinator.swift,**/*Mock.swift,**/*Delegate.swift,**/Extensions/**,**/FirebaseAuthService.swift,**/CoreDataService.swift" \
             -Dsonar.tests=. \
-            -Dsonar.test.inclusions="**/*Tests.swift,**/*Mocks.swift" \
+            -Dsonar.test.inclusions="**/*Tests.swift,**/*Mock.swift" \
             -Dsonar.token=$SONAR_TOKEN \
             -Dsonar.coverageReportPaths="coverage.xml"

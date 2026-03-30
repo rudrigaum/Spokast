@@ -5,27 +5,24 @@
 //  Created by Rodrigo Cerqueira Reis on 24/01/26.
 //
 
-import Foundation
 import UIKit
 import Combine
 import UniformTypeIdentifiers
 
 final class ProfileViewController: UIViewController {
     
-    // MARK: - Dependencies
+    // MARK: - Properties
     private let viewModel: ProfileViewModelProtocol
+    private var cancellables = Set<AnyCancellable>()
     
     // MARK: - View
     private var customView: ProfileView {
         return view as! ProfileView
     }
     
-    private var cancellables = Set<AnyCancellable>()
-    
     // MARK: - Init
-    
-    init(viewModel: ProfileViewModelProtocol? = nil) {
-        self.viewModel = viewModel ?? ProfileViewModel()
+    init(viewModel: ProfileViewModelProtocol) {
+        self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -40,13 +37,15 @@ final class ProfileViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupTargets()
+        setupActions()
         setupBindings()
     }
     
     // MARK: - Setup
-    private func setupTargets() {
-        customView.importButton.addTarget(self, action: #selector(didTapImport), for: .touchUpInside)
+    private func setupActions() {
+        customView.actionButton.addTarget(self, action: #selector(didTapAuthAction(_:)), for: .touchUpInside)
+        customView.createAccountButton.addTarget(self, action: #selector(didTapAuthAction(_:)), for: .touchUpInside)
+        customView.backupButton.addTarget(self, action: #selector(didTapImport), for: .touchUpInside)
     }
     
     private func setupBindings() {
@@ -58,31 +57,34 @@ final class ProfileViewController: UIViewController {
             .store(in: &cancellables)
     }
     
+    // MARK: - State Management
+    private func handleStateChange(_ state: ProfileViewState) {
+        customView.render(state: state)
+
+        switch state {
+        case .authenticated(_, let message):
+            if let successMessage = message {
+                showAlert(title: "Success", message: successMessage)
+            }
+        case .error(let message):
+            showAlert(title: "Error", message: message)
+        default:
+            break
+        }
+    }
+    
     // MARK: - Actions
+    @objc private func didTapAuthAction(_ sender: UIButton) {
+        let isSignUp = (sender === customView.createAccountButton)
+        print("DEBUG: Clicou em criar conta? \(isSignUp)")
+        viewModel.handleAccountAction(isSignUp: isSignUp)
+    }
+    
     @objc private func didTapImport() {
-        let supportedTypes: [UTType] = [.xml]
-        let picker = UIDocumentPickerViewController(forOpeningContentTypes: supportedTypes)
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [.xml])
         picker.delegate = self
         picker.allowsMultipleSelection = false
         present(picker, animated: true)
-    }
-    
-    private func handleStateChange(_ state: ProfileViewState) {
-        switch state {
-        case .idle:
-            customView.setLoading(false)
-            
-        case .loading:
-            customView.setLoading(true)
-            
-        case .success(let message):
-            customView.setLoading(false)
-            showAlert(title: "Success", message: message)
-            
-        case .error(let message):
-            customView.setLoading(false)
-            showAlert(title: "Error", message: message)
-        }
     }
     
     private func showAlert(title: String, message: String) {

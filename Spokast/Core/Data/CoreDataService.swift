@@ -9,37 +9,45 @@ import Foundation
 import CoreData
 
 final class CoreDataService {
-    
+
     static let shared = CoreDataService()
     private let modelName = "Spokast"
-    
+
     private init() {}
     
     // MARK: - Core Data Stack
     lazy var persistentContainer: NSPersistentContainer = {
         let container = NSPersistentContainer(name: modelName)
-        
+
+        let isTesting = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+
+        if isTesting {
+            let description = NSPersistentStoreDescription()
+            description.url = URL(fileURLWithPath: "/dev/null")
+            container.persistentStoreDescriptions = [description]
+        }
+
         container.loadPersistentStores { (storeDescription, error) in
             if let error = error as NSError? {
                 fatalError("❌ Core Data Store failed to load: \(error), \(error.userInfo)")
             }
         }
-        
+
         container.viewContext.automaticallyMergesChangesFromParent = true
         container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
-        
+
         return container
     }()
-    
+
     // MARK: - Context Accessors
     var viewContext: NSManagedObjectContext {
         return persistentContainer.viewContext
     }
-    
+
     func performBackgroundTask(_ block: @escaping (NSManagedObjectContext) -> Void) {
         persistentContainer.performBackgroundTask(block)
     }
-    
+
     // MARK: - Saving
     func saveContext() {
         let context = persistentContainer.viewContext

@@ -7,6 +7,7 @@
 
 import UIKit
 import Kingfisher
+import FirebaseCore
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -14,6 +15,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        if Bundle.main.url(forResource: "GoogleService-Info", withExtension: "plist") != nil {
+                    FirebaseApp.configure()
+                } else {
+                    let options = FirebaseOptions(googleAppID: "1:123456789012:ios:a1b2c3d4e5f67890", gcmSenderID: "123456789012")
+                    options.apiKey = "AIzaSyDummyKeyForTests1234567890"
+                    options.projectID = "dummy-project-id"
+                    FirebaseApp.configure(options: options)
+                }
         setupImageCache()
         return true
     }

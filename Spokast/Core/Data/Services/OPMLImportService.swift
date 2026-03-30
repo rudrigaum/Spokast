@@ -8,8 +8,12 @@
 import Foundation
 import SwiftData
 
+protocol OPMLImportServiceProtocol {
+    func importOPML(from url: URL) async throws -> Int
+}
+
 @MainActor
-final class OPMLImportService {
+final class OPMLImportService: OPMLImportServiceProtocol {
     
     // MARK: - Dependencies
     private let context: ModelContext
