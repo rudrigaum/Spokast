@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import Foundation
 import Combine
 
 final class DownloadService: NSObject, DownloadServiceProtocol {
@@ -116,12 +115,18 @@ final class DownloadService: NSObject, DownloadServiceProtocol {
 // MARK: - URLSessionDownloadDelegate
 extension DownloadService: URLSessionDownloadDelegate {
     
-    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
+    func urlSession(
+        _ session: URLSession,
+        downloadTask: URLSessionDownloadTask,
+        didWriteData bytesWritten: Int64,
+        totalBytesWritten: Int64,
+        totalBytesExpectedToWrite: Int64
+    ) {
         guard let url = downloadTask.originalRequest?.url else { return }
         let progress = Float(totalBytesWritten) / Float(totalBytesExpectedToWrite)
         updateStatus(.downloading(progress: progress), for: url)
     }
-    
+
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
         guard let sourceURL = downloadTask.originalRequest?.url else { return }
         let destinationURL = localFilePath(for: sourceURL)
@@ -134,7 +139,6 @@ extension DownloadService: URLSessionDownloadDelegate {
         
             persistence.saveDownloadedEpisode(sourceURL)
             updateStatus(.downloaded(localURL: destinationURL), for: sourceURL)
-            
         } catch {
             updateStatus(.failed(error: error), for: sourceURL)
         }

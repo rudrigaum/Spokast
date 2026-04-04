@@ -55,7 +55,6 @@ final class HomeViewModel {
                 ]
                 
                 self.state = .success
-                
             } catch {
                 let errorMessage = (error as? APIError)?.localizedDescription ?? "Failed to load home feed."
                 self.state = .error(errorMessage)

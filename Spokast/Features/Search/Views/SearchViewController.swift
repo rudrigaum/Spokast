@@ -112,7 +112,7 @@ final class SearchViewController: UIViewController {
             for: UISearchTextField.textDidChangeNotification,
             object: searchController.searchBar.searchTextField
         )
-        .map { ($0.object as! UISearchTextField).text ?? "" }
+        .map { ($0.object as? UISearchTextField)?.text ?? "" }
         .debounce(for: .milliseconds(500), scheduler: DispatchQueue.main)
         .removeDuplicates()
         .sink { [weak self] text in

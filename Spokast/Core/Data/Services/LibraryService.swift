@@ -75,7 +75,6 @@ final class LibraryService: LibraryServiceProtocol {
             
             try context.save()
             return savedEpisode.isPlayed
-            
         } else {
             let newSaved = SavedEpisode(from: episode)
             newSaved.isPlayed = true

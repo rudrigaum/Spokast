@@ -38,5 +38,4 @@ extension FavoritesCoordinator: PodcastSelectionDelegate {
     }
 }
 
-
 extension FavoritesCoordinator: PodcastDetailCoordinatorDelegate {}

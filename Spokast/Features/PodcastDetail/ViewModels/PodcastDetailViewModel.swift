@@ -29,7 +29,7 @@ final class PodcastDetailViewModel: ObservableObject {
     // MARK: - Outputs
     @Published private(set) var episodes: [Episode] = []
     @Published private(set) var errorMessage: String?
-    @Published private(set) var currentPlayingEpisodeId: Int? = nil
+    @Published private(set) var currentPlayingEpisodeId: Int?
     @Published private(set) var isPlayerPaused: Bool = false
     @Published var isPlaying: Bool = false
     @Published var currentPlayingID: Int?

@@ -43,7 +43,7 @@ final class FavoritesViewModel: FavoritesViewModelProtocol {
     
     // MARK: - Output
     @Published private(set) var state: FavoritesViewState = .loading
-    @Published private(set) var currentFilter: String? = nil
+    @Published private(set) var currentFilter: String?
     
     var statePublisher: Published<FavoritesViewState>.Publisher { $state }
     
@@ -98,7 +98,6 @@ final class FavoritesViewModel: FavoritesViewModelProtocol {
             do {
                 try await libraryService.updateCategory(for: podcastId, to: newCategory)
                 fetchLocalData()
-                
             } catch {
                 print("❌ Error updating category: \(error)")
             }

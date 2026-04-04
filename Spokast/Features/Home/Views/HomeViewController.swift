@@ -19,7 +19,10 @@ final class HomeViewController: UIViewController {
     weak var delegate: HomeViewControllerDelegate?
 
     private var customView: HomeView {
-        return self.view as! HomeView
+        guard let customView = self.view as? HomeView else {
+            fatalError("Expected view to be of type HomeView. Verify your loadView() method implementation.")
+        }
+        return customView
     }
 
     // MARK: - Initialization
@@ -107,23 +110,34 @@ extension HomeViewController: UICollectionViewDataSource {
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        
-        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: FeaturedPodcastCell.reuseIdentifier, for: indexPath) as? FeaturedPodcastCell else {
+
+        guard let cell = collectionView.dequeueReusableCell(
+            withReuseIdentifier: FeaturedPodcastCell.reuseIdentifier,
+            for: indexPath
+        ) as? FeaturedPodcastCell else {
             fatalError("Could not dequeue FeaturedPodcastCell")
         }
-        
+
         let section = viewModel.sections[indexPath.section]
         let podcast = section.podcasts[indexPath.item]
-        
+
         cell.configure(with: podcast)
-        
+
         return cell
     }
-    
-    func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
+
+    func collectionView(
+        _ collectionView: UICollectionView,
+        viewForSupplementaryElementOfKind kind: String,
+        at indexPath: IndexPath
+    ) -> UICollectionReusableView {
         
         if kind == UICollectionView.elementKindSectionHeader {
-            guard let header = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: HomeSectionHeader.reuseIdentifier, for: indexPath) as? HomeSectionHeader else {
+            guard let header = collectionView.dequeueReusableSupplementaryView(
+                ofKind: kind,
+                withReuseIdentifier: HomeSectionHeader.reuseIdentifier,
+                for: indexPath
+            ) as? HomeSectionHeader else {
                 return UICollectionReusableView()
             }
             

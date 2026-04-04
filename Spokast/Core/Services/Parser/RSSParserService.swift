@@ -62,7 +62,7 @@ final class RSSParserService: NSObject, RSSParserServiceProtocol {
         
         let request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 30)
         
-        let task = URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+        let task = URLSession.shared.dataTask(with: request) { [weak self] data, _, error in
             guard let self = self else { return }
             
             if let error = error {
@@ -88,7 +88,13 @@ final class RSSParserService: NSObject, RSSParserServiceProtocol {
 // MARK: - XMLParserDelegate
 extension RSSParserService: XMLParserDelegate {
     
-    func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
+    func parser(
+        _ parser: XMLParser,
+        didStartElement elementName: String,
+        namespaceURI: String?,
+        qualifiedName qName: String?,
+        attributes attributeDict: [String: String] = [:]
+    ) {
         currentElement = elementName
         
         if elementName == "item" {
@@ -117,7 +123,7 @@ extension RSSParserService: XMLParserDelegate {
             }
         }
     }
-    
+
     func parser(_ parser: XMLParser, foundCharacters string: String) {
         guard isInsideItem else { return }
         

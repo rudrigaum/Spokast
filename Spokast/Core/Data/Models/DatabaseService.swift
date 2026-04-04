@@ -30,7 +30,6 @@ final class DatabaseService {
             self.context = container.mainContext
             
             print("✅ DatabaseService initialized successfully with path: \(modelConfiguration.url.path(percentEncoded: false))")
-            
         } catch {
             fatalError("❌ Failed to initialize DatabaseService: \(error)")
         }

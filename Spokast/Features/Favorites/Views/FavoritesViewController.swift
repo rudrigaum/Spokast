@@ -199,14 +199,14 @@ final class FavoritesViewController: UIViewController {
             return collectionView.dequeueConfiguredReusableCell(using: cellRegistration, for: indexPath, item: item)
         }
         
-        dataSource.supplementaryViewProvider = { collectionView, kind, indexPath in
+        dataSource.supplementaryViewProvider = { collectionView, _, indexPath in
             return collectionView.dequeueConfiguredReusableSupplementary(using: headerRegistration, for: indexPath)
         }
     }
     
     // MARK: - Cell & Header Factories
     private func makeCellRegistration() -> UICollectionView.CellRegistration<UICollectionViewListCell, FavoriteItem> {
-        return UICollectionView.CellRegistration<UICollectionViewListCell, FavoriteItem> { [weak self] cell, indexPath, item in
+        return UICollectionView.CellRegistration<UICollectionViewListCell, FavoriteItem> { [weak self] cell, _, item in
             
             var content = cell.defaultContentConfiguration()
             
@@ -230,25 +230,27 @@ final class FavoritesViewController: UIViewController {
     }
     
     private func makeHeaderRegistration() -> UICollectionView.SupplementaryRegistration<UICollectionViewListCell> {
-        return UICollectionView.SupplementaryRegistration<UICollectionViewListCell>(elementKind: UICollectionView.elementKindSectionHeader) { [weak self] supplementaryView, elementKind, indexPath in
+        return UICollectionView.SupplementaryRegistration<UICollectionViewListCell>(
+            elementKind: UICollectionView.elementKindSectionHeader
+        ) { [weak self] supplementaryView, _, indexPath in
             guard let self = self else { return }
-            
+
             let snapshot = self.dataSource.snapshot()
             let sections = snapshot.sectionIdentifiers
-            
+
             if indexPath.section < sections.count {
                 let section = sections[indexPath.section]
                 var content = supplementaryView.defaultContentConfiguration()
-                
+
                 content.text = section.title
                 content.textProperties.font = .preferredFont(forTextStyle: .title3)
                 content.textProperties.color = .label
-                
+
                 supplementaryView.contentConfiguration = content
             }
         }
     }
-    
+
     private func loadImage(for item: FavoriteItem, into cell: UICollectionViewListCell) {
         guard let urlString = item.artworkUrl, let url = URL(string: urlString) else { return }
         
@@ -337,7 +339,11 @@ extension FavoritesViewController: UICollectionViewDelegate {
         }
     }
     
-    func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+    func collectionView(
+        _ collectionView: UICollectionView,
+        contextMenuConfigurationForItemAt indexPath: IndexPath,
+        point: CGPoint
+    ) -> UIContextMenuConfiguration? {
         
         guard let item = dataSource.itemIdentifier(for: indexPath) else { return nil }
         

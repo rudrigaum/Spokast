@@ -15,12 +15,22 @@ final class HomeView: UIView {
         let layout = createCompositionalLayout()
         let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
         cv.backgroundColor = .systemBackground
-        cv.register(FeaturedPodcastCell.self, forCellWithReuseIdentifier: FeaturedPodcastCell.reuseIdentifier)
-        cv.register(HomeSectionHeader.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: HomeSectionHeader.reuseIdentifier)
+        
+        cv.register(
+            FeaturedPodcastCell.self,
+            forCellWithReuseIdentifier: FeaturedPodcastCell.reuseIdentifier
+        )
+
+        cv.register(
+            HomeSectionHeader.self,
+            forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
+            withReuseIdentifier: HomeSectionHeader.reuseIdentifier
+        )
+
         cv.translatesAutoresizingMaskIntoConstraints = false
         return cv
     }()
-    
+
     let activityIndicator: UIActivityIndicatorView = {
         let spinner = UIActivityIndicatorView(style: .large)
         spinner.hidesWhenStopped = true
@@ -41,7 +51,7 @@ final class HomeView: UIView {
     
     // MARK: - Compositional Layout
     private func createCompositionalLayout() -> UICollectionViewLayout {
-        return UICollectionViewCompositionalLayout { (sectionIndex, layoutEnvironment) -> NSCollectionLayoutSection? in
+        return UICollectionViewCompositionalLayout { (_, _) -> NSCollectionLayoutSection? in
             
             let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0),
                                                   heightDimension: .fractionalHeight(1.0))

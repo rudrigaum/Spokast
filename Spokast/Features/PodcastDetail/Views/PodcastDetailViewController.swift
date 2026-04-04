@@ -167,7 +167,7 @@ final class PodcastDetailViewController: UIViewController {
     private func bindEpisodes() {
         viewModel.$episodes
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] episodes in
+            .sink { [weak self] _ in
                 self?.customView?.tableView.reloadData()
             }
             .store(in: &cancellables)
@@ -244,8 +244,6 @@ final class PodcastDetailViewController: UIViewController {
         }
     }
     
-    
-    
     private func updateVisibleCells(playingId: Int?, isPlaying: Bool) {
         guard let visibleRows = customView?.tableView.indexPathsForVisibleRows else { return }
         
@@ -272,11 +270,9 @@ final class PodcastDetailViewController: UIViewController {
             let cell = getCell(for: episode)
             let sourceButton = cell?.downloadButton
             
-
              presentDeleteConfirmation(for: episode, sourceView: sourceButton) { [weak self] in
                  self?.viewModel.deleteEpisode(episode)
              }
-            
         } else {
             viewModel.toggleDownload(for: episode)
             updateVisibleCellsDownloadState()

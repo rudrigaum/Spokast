@@ -105,7 +105,7 @@ final class FeaturedPodcastCell: UICollectionViewCell {
             
             authorLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 2),
             authorLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            authorLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            authorLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor)
         ])
     }
 }

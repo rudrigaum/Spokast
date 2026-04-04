@@ -53,7 +53,6 @@ final class SearchViewModel {
                     self.podcasts = results
                     self.state = .success
                 }
-                
             } catch {
                 let errorMessage = (error as? APIError)?.localizedDescription ?? "Failed to search podcasts."
                 self.state = .error(errorMessage)

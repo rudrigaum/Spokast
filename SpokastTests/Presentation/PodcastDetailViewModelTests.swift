@@ -27,8 +27,17 @@ final class PodcastDetailViewModelTests: XCTestCase {
     
     // MARK: - Helper
     private func makeSUT(episodes: [Episode]) -> PodcastDetailViewModel {
-        let podcast = Podcast(trackId: 1, collectionId: 1, artistName: "Test", collectionName: "Test Pod", artworkUrl100: "", feedUrl: nil, artworkUrl600: nil, primaryGenreName: nil)
-        
+        let podcast = Podcast(
+            trackId: 1,
+            collectionId: 1,
+            artistName: "Test",
+            collectionName: "Test Pod",
+            artworkUrl100: "",
+            feedUrl: nil,
+            artworkUrl600: nil,
+            primaryGenreName: nil
+        )
+
         let sut = PodcastDetailViewModel(
             podcast: podcast,
             repository: MockPodcastRepository(episodes: episodes),
@@ -39,7 +48,7 @@ final class PodcastDetailViewModelTests: XCTestCase {
         )
         return sut
     }
-    
+
     // MARK: - Tests
     func test_updateSorting_shouldReorderEpisodesByDuration() async {
         let epShort = createEpisode(id: 1, duration: 60)

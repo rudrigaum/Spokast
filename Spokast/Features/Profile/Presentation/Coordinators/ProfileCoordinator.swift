@@ -5,7 +5,6 @@
 //  Created by Rodrigo Cerqueira Reis on 25/01/26.
 //
 
-
 import Foundation
 import UIKit
 

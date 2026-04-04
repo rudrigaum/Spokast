@@ -17,9 +17,12 @@ final class ProfileViewController: UIViewController {
     
     // MARK: - View
     private var customView: ProfileView {
-        return view as! ProfileView
+        guard let customView = view as? ProfileView else {
+            fatalError("Expected view to be of type ProfileView. Verify your loadView() method implementation.")
+        }
+        return customView
     }
-    
+
     // MARK: - Init
     init(viewModel: ProfileViewModelProtocol) {
         self.viewModel = viewModel

@@ -85,9 +85,7 @@ final class AudioPlayerService: NSObject, AudioPlayerServiceProtocol {
         
         if let url = episode.streamUrl {
             self.play(url: url)
-        }
-        
-        else if let previewUrl = episode.previewUrl, let url = URL(string: previewUrl) {
+        } else if let previewUrl = episode.previewUrl, let url = URL(string: previewUrl) {
             self.play(url: url)
         } else {
             print("❌ AudioPlayerService: No valid audio URL found for episode '\(episode.trackName)'")
@@ -184,7 +182,6 @@ final class AudioPlayerService: NSObject, AudioPlayerServiceProtocol {
             Task { @MainActor [weak self] in
                 guard let self = self else { return }
                 
-                
                 if object == self.player?.currentItem {
                     self.handlePlaybackEnded()
                 }
@@ -235,13 +232,13 @@ final class AudioPlayerService: NSObject, AudioPlayerServiceProtocol {
         }
         
         commandCenter.skipBackwardCommand.preferredIntervals = [15]
-        commandCenter.skipBackwardCommand.addTarget { [weak self] event in
+        commandCenter.skipBackwardCommand.addTarget { [weak self] _ in
             self?.seekRelative(by: -15)
             return .success
         }
         
         commandCenter.skipForwardCommand.preferredIntervals = [30]
-        commandCenter.skipForwardCommand.addTarget { [weak self] event in
+        commandCenter.skipForwardCommand.addTarget { [weak self] _ in
             self?.seekRelative(by: 30)
             return .success
         }

@@ -40,7 +40,6 @@ final class PlayerViewModel {
         return audioPlayerService.currentEpisode
     }
 
-    
     // MARK: - Initialization
     init(
         episode: Episode,

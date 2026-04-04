@@ -18,7 +18,7 @@ final class PodcastRepository: PodcastRepositoryProtocol {
     private let rssParser: RSSParserServiceProtocol
     
     // MARK: - Initialization
-    init(apiService: PodcastServiceProtocol = PodcastService(),rssParser: RSSParserServiceProtocol = RSSParserService()) {
+    init(apiService: PodcastServiceProtocol = PodcastService(), rssParser: RSSParserServiceProtocol = RSSParserService()) {
         self.apiService = apiService
         self.rssParser = rssParser
     }

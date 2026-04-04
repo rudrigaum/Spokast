@@ -81,9 +81,9 @@ final class LibrarySyncService: LibrarySyncServiceProtocol {
         let targetArray = Array(targets)
         let total = targetArray.count
         
-        for i in stride(from: 0, to: total, by: batchSize) {
-            let end = min(i + batchSize, total)
-            let batch = Array(targetArray[i..<end])
+        for startIndex in stride(from: 0, to: total, by: batchSize) {
+            let end = min(startIndex + batchSize, total)
+            let batch = Array(targetArray[startIndex..<end])
             let batchResults = await processBatch(batch)
             
             for (id, podcast) in batchResults {
@@ -106,11 +106,10 @@ final class LibrarySyncService: LibrarySyncServiceProtocol {
                         let service = PodcastService()
                         
                         do {
-                            if let p = try await service.fetchPodcast(byFeedUrl: data.url) {
-                                return (id, p)
+                            if let fetchedPodcast = try await service.fetchPodcast(byFeedUrl: data.url) {
+                                return (id, fetchedPodcast)
                             }
                         } catch {
-            
                         }
                         
                         let searchTitle = data.title
@@ -120,11 +119,10 @@ final class LibrarySyncService: LibrarySyncServiceProtocol {
                         if !searchTitle.isEmpty {
                             do {
                                 let results = try await service.fetchPodcasts(searchTerm: searchTitle, limit: 1)
-                                if let p = results.first {
-                                    return (id, p)
+                                if let fetchedPodcast = results.first {
+                                    return (id, fetchedPodcast)
                                 }
                             } catch {
-                
                             }
                         }
                         

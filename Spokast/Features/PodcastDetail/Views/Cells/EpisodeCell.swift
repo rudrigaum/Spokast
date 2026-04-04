@@ -265,7 +265,7 @@ final class EpisodeCell: UITableViewCell {
             downloadButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16),
             downloadButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             downloadButton.heightAnchor.constraint(equalToConstant: 32),
-            downloadButton.widthAnchor.constraint(equalToConstant: 32),
+            downloadButton.widthAnchor.constraint(equalToConstant: 32)
         ])
     }
 }
