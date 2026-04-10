@@ -13,22 +13,22 @@ final class HomeView: UIView {
     // MARK: - UI Components
     lazy var collectionView: UICollectionView = {
         let layout = createCompositionalLayout()
-        let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        cv.backgroundColor = .systemBackground
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        collectionView.backgroundColor = .systemBackground
         
-        cv.register(
+        collectionView.register(
             FeaturedPodcastCell.self,
             forCellWithReuseIdentifier: FeaturedPodcastCell.reuseIdentifier
         )
 
-        cv.register(
+        collectionView.register(
             HomeSectionHeader.self,
             forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
             withReuseIdentifier: HomeSectionHeader.reuseIdentifier
         )
 
-        cv.translatesAutoresizingMaskIntoConstraints = false
-        return cv
+        collectionView.translatesAutoresizingMaskIntoConstraints = false
+        return collectionView
     }()
 
     let activityIndicator: UIActivityIndicatorView = {
@@ -45,7 +45,7 @@ final class HomeView: UIView {
     }
     
     @available(*, unavailable)
-    required init?(coder: NSCoder) {
+    required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     

@@ -143,14 +143,19 @@ extension RSSParserService: XMLParserDelegate {
         }
     }
     
-    func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName qName: String?) {
+    func parser(
+        _ parser: XMLParser,
+        didEndElement elementName: String,
+        namespaceURI: String?,
+        qualifiedName qName: String?
+    ) {
         if elementName == "item" {
             let episode = makeEpisode()
             episodes.append(episode)
             isInsideItem = false
         }
     }
-    
+
     func parserDidEndDocument(_ parser: XMLParser) {
         continuation?.resume(returning: episodes)
         continuation = nil

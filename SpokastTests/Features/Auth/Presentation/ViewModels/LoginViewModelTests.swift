@@ -72,7 +72,11 @@ final class LoginViewModelTests: XCTestCase {
         let expectation = XCTestExpectation(description: "Error message is updated")
         sut.authMode = .signIn
 
-        let expectedError = NSError(domain: "AuthError", code: 401, userInfo: [NSLocalizedDescriptionKey: "Invalid credentials."])
+        let expectedError = NSError(
+            domain: "AuthError",
+            code: 401,
+            userInfo: [NSLocalizedDescriptionKey: "Invalid credentials."]
+        )
         mockUseCase.stubbedSignInResult = .failure(expectedError)
 
         sut.$errorMessage

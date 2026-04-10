@@ -103,7 +103,7 @@ final class EpisodeCell: UITableViewCell {
     }
     
     @available(*, unavailable)
-    required init?(coder: NSCoder) {
+    required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
@@ -208,16 +208,20 @@ final class EpisodeCell: UITableViewCell {
     }
     
     @objc private func didTapPlayContainer() {
-        UIView.animate(withDuration: 0.1, animations: {
-            self.artworkContainer.transform = CGAffineTransform(scaleX: 0.95, y: 0.95)
-        }) { _ in
-            UIView.animate(withDuration: 0.1) {
-                self.artworkContainer.transform = .identity
+        UIView.animate(
+            withDuration: 0.1,
+            animations: {
+                self.artworkContainer.transform = CGAffineTransform(scaleX: 0.95, y: 0.95)
+            },
+            completion: { _ in
+                UIView.animate(withDuration: 0.1) {
+                    self.artworkContainer.transform = .identity
+                }
             }
-        }
+        )
         onPlayTap?()
-    }
-    
+        }
+
     @objc private func didTapDownload() {
         didTapDownloadAction?()
     }

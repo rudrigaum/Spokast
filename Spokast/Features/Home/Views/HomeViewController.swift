@@ -32,7 +32,7 @@ final class HomeViewController: UIViewController {
     }
 
     @available(*, unavailable)
-    required init?(coder: NSCoder) {
+    required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
@@ -109,20 +109,23 @@ extension HomeViewController: UICollectionViewDataSource {
         return viewModel.sections[section].podcasts.count
     }
     
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-
+    func collectionView(
+        _ collectionView: UICollectionView,
+        cellForItemAt indexPath: IndexPath
+    ) -> UICollectionViewCell {
+        
         guard let cell = collectionView.dequeueReusableCell(
             withReuseIdentifier: FeaturedPodcastCell.reuseIdentifier,
             for: indexPath
         ) as? FeaturedPodcastCell else {
             fatalError("Could not dequeue FeaturedPodcastCell")
         }
-
+        
         let section = viewModel.sections[indexPath.section]
         let podcast = section.podcasts[indexPath.item]
-
+        
         cell.configure(with: podcast)
-
+        
         return cell
     }
 

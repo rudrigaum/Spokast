@@ -26,13 +26,13 @@ final class MiniPlayerView: UIView {
     }()
     
     private let imageView: UIImageView = {
-        let iv = UIImageView()
-        iv.contentMode = .scaleAspectFill
-        iv.layer.cornerRadius = 8
-        iv.clipsToBounds = true
-        iv.backgroundColor = .secondarySystemBackground
-        iv.translatesAutoresizingMaskIntoConstraints = false
-        return iv
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleAspectFill
+        imageView.layer.cornerRadius = 8
+        imageView.clipsToBounds = true
+        imageView.backgroundColor = .secondarySystemBackground
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        return imageView
     }()
     
     private let titleLabel: UILabel = {
@@ -64,11 +64,11 @@ final class MiniPlayerView: UIView {
     }()
     
     private let progressView: UIProgressView = {
-        let pv = UIProgressView(progressViewStyle: .bar)
-        pv.trackTintColor = .clear
-        pv.progressTintColor = .systemPurple
-        pv.translatesAutoresizingMaskIntoConstraints = false
-        return pv
+        let progressView = UIProgressView(progressViewStyle: .bar)
+        progressView.trackTintColor = .clear
+        progressView.progressTintColor = .systemPurple
+        progressView.translatesAutoresizingMaskIntoConstraints = false
+        return progressView
     }()
     
     private let separatorView: UIView = {
@@ -88,7 +88,7 @@ final class MiniPlayerView: UIView {
     }
     
     @available(*, unavailable)
-    required init?(coder: NSCoder) {
+    required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     

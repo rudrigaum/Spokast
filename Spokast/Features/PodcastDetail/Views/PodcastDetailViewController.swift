@@ -44,7 +44,7 @@ final class PodcastDetailViewController: UIViewController {
     }
     
     @available(*, unavailable)
-    required init?(coder: NSCoder) {
+    required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
@@ -178,12 +178,12 @@ final class PodcastDetailViewController: UIViewController {
             .compactMap { $0 }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] message in
-                guard let _ = self else { return }
+                guard self != nil else { return }
                 print("❌ ERRO: \(message)")
             }
             .store(in: &cancellables)
     }
-    
+
     private func bindPlayerState() {
         viewModel.$currentPlayingID
             .receive(on: DispatchQueue.main)
@@ -294,18 +294,21 @@ extension PodcastDetailViewController: UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: EpisodeCell.reuseIdentifier, for: indexPath) as? EpisodeCell else {
+        guard let cell = tableView.dequeueReusableCell(
+            withIdentifier: EpisodeCell.reuseIdentifier,
+            for: indexPath
+        ) as? EpisodeCell else {
             return UITableViewCell()
         }
-        
+
         let episode = viewModel.episodes[indexPath.row]
         let podcastArtString = viewModel.podcast.artworkUrl600 ?? viewModel.podcast.artworkUrl100
         let podcastArtURL = URL(string: podcastArtString ?? "")
         let isPlayingThisEpisode = viewModel.isPlaying && (viewModel.currentPlayingID == episode.id)
         let downloadStatus = viewModel.getDownloadStatus(for: episode)
-        
+
         let isPlayed = viewModel.isEpisodePlayed(episode)
-        
+
         cell.configure(
             with: episode,
             downloadStatus: downloadStatus,
@@ -313,15 +316,15 @@ extension PodcastDetailViewController: UITableViewDataSource {
             isPlaying: isPlayingThisEpisode,
             isPlayed: isPlayed
         )
-        
+
         cell.onPlayTap = { [weak self] in
             self?.viewModel.playEpisode(at: indexPath.row)
         }
-        
+
         cell.didTapDownloadAction = { [weak self] in
             self?.handleDownloadTap(for: episode)
         }
-        
+
         return cell
     }
 }
@@ -340,7 +343,10 @@ extension PodcastDetailViewController: UITableViewDelegate {
         return UITableView.automaticDimension
     }
     
-    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+    func tableView(
+        _ tableView: UITableView,
+        trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath
+    ) -> UISwipeActionsConfiguration? {
         guard indexPath.row < viewModel.episodes.count else { return nil }
         
         let episode = viewModel.episodes[indexPath.row]

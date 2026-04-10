@@ -129,7 +129,7 @@ final class PodcastDetailView: UIView {
     }
 
     @available(*, unavailable)
-    required init?(coder: NSCoder) {
+    required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
@@ -176,9 +176,15 @@ final class PodcastDetailView: UIView {
         
         headerContainerView.addSubview(headerStackView)
         
-        let stackLeading = headerStackView.leadingAnchor.constraint(equalTo: headerContainerView.leadingAnchor, constant: 24)
-        let stackTrailing = headerStackView.trailingAnchor.constraint(equalTo: headerContainerView.trailingAnchor, constant: -24)
-        
+        let stackLeading = headerStackView.leadingAnchor.constraint(
+            equalTo: headerContainerView.leadingAnchor,
+            constant: 24
+        )
+        let stackTrailing = headerStackView.trailingAnchor.constraint(
+            equalTo: headerContainerView.trailingAnchor,
+            constant: -24
+        )
+
         stackLeading.priority = UILayoutPriority(999)
         stackTrailing.priority = UILayoutPriority(999)
         

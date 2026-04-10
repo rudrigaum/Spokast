@@ -135,7 +135,8 @@ final class PodcastDetailViewModel: ObservableObject {
         if !currentSearchQuery.isEmpty {
             result = result.filter { episode in
                 let matchesTitle = episode.trackName.localizedCaseInsensitiveContains(currentSearchQuery)
-                let matchesDescription = episode.description?.localizedCaseInsensitiveContains(currentSearchQuery) ?? false
+                let matchesDescription = episode.description?.localizedCaseInsensitiveContains(currentSearchQuery)
+                ?? false
                 return matchesTitle || matchesDescription
             }
         }

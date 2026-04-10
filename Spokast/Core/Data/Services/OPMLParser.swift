@@ -86,7 +86,12 @@ extension OPMLParser: XMLParserDelegate {
         }
     }
 
-    func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName qName: String?) {
+    func parser(
+        _ parser: XMLParser,
+        didEndElement elementName: String,
+        namespaceURI: String?,
+        qualifiedName qName: String?
+    ) {
         if parseError != nil { return }
         
         if elementName == "outline" {
@@ -99,7 +104,7 @@ extension OPMLParser: XMLParserDelegate {
             currentDepth -= 1
         }
     }
-    
+
     func parser(_ parser: XMLParser, parseErrorOccurred parseError: Error) {
         self.parseError = parseError
     }

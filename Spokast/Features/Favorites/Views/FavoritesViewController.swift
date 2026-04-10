@@ -36,10 +36,10 @@ final class FavoritesViewController: UIViewController {
         config.backgroundColor = .systemGroupedBackground
         
         let layout = UICollectionViewCompositionalLayout.list(using: config)
-        let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        cv.translatesAutoresizingMaskIntoConstraints = false
-        cv.delegate = self
-        return cv
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        collectionView.translatesAutoresizingMaskIntoConstraints = false
+        collectionView.delegate = self
+        return collectionView
     }()
     
     private let loadingIndicator: UIActivityIndicatorView = {
@@ -75,7 +75,7 @@ final class FavoritesViewController: UIViewController {
     }
     
     @available(*, unavailable)
-    required init?(coder: NSCoder) {
+    required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
@@ -178,10 +178,14 @@ final class FavoritesViewController: UIViewController {
         }
         
         let saveAction = UIAlertAction(title: "Save", style: .default) { [weak self, weak alert] _ in
-            guard let newName = alert?.textFields?.first?.text, !newName.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+            guard let newName = alert?.textFields?.first?.text,
+                  !newName.trimmingCharacters(in: .whitespaces).isEmpty else {
+                return
+            }
+
             self?.viewModel.updatePodcastCategory(podcastId: item.collectionId, newCategory: newName)
         }
-        
+
         let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
         
         alert.addAction(cancelAction)
