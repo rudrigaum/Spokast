@@ -144,10 +144,10 @@ extension RSSParserService: XMLParserDelegate {
     }
     
     func parser(
-        _ parser: XMLParser,
+        _ _: XMLParser,
         didEndElement elementName: String,
-        namespaceURI: String?,
-        qualifiedName qName: String?
+        namespaceURI _: String?,
+        qualifiedName _: String?
     ) {
         if elementName == "item" {
             let episode = makeEpisode()

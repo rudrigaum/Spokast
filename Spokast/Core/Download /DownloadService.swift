@@ -116,9 +116,9 @@ final class DownloadService: NSObject, DownloadServiceProtocol {
 extension DownloadService: URLSessionDownloadDelegate {
     
     func urlSession(
-        _ session: URLSession,
+        _ _: URLSession,
         downloadTask: URLSessionDownloadTask,
-        didWriteData bytesWritten: Int64,
+        didWriteData _: Int64,
         totalBytesWritten: Int64,
         totalBytesExpectedToWrite: Int64
     ) {

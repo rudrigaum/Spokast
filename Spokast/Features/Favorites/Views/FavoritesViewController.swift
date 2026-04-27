@@ -344,9 +344,9 @@ extension FavoritesViewController: UICollectionViewDelegate {
     }
     
     func collectionView(
-        _ collectionView: UICollectionView,
+        _ _: UICollectionView,
         contextMenuConfigurationForItemAt indexPath: IndexPath,
-        point: CGPoint
+        point _: CGPoint
     ) -> UIContextMenuConfiguration? {
         
         guard let item = dataSource.itemIdentifier(for: indexPath) else { return nil }
