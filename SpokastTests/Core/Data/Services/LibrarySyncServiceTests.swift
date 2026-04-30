@@ -103,7 +103,7 @@ final class LibrarySyncServiceTests: XCTestCase {
             collectionName: "Novo Titulo",
             artworkUrl100: nil,
             feedUrl: "https://feed.com",
-            artworkUrl600: "https://nova-image.com",
+            artworkUrl600: "https://busca-image.com",
             primaryGenreName: "Tech"
         )
 
