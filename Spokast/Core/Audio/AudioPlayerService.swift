@@ -62,7 +62,7 @@ final class AudioPlayerService: NSObject, AudioPlayerServiceProtocol {
     var currentPodcastImageURL: URL?
     
     // MARK: - Initialization
-    private override init() {
+    override init() {
         super.init()
         setupAudioSession()
         setupRemoteCommands()
