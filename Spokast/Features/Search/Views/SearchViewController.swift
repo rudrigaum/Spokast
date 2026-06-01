@@ -18,20 +18,20 @@ final class SearchViewController: UIViewController {
     
     // MARK: - UI Components
     private lazy var searchController: UISearchController = {
-        let sc = UISearchController(searchResultsController: nil)
-        sc.obscuresBackgroundDuringPresentation = false
-        sc.searchBar.placeholder = "Find podcasts, artists..."
-        sc.searchBar.tintColor = .systemPurple
-        return sc
+        let searchController = UISearchController(searchResultsController: nil)
+        searchController.obscuresBackgroundDuringPresentation = false
+        searchController.searchBar.placeholder = "Find podcasts, artists..."
+        searchController.searchBar.tintColor = .systemPurple
+        return searchController
     }()
     
     private lazy var tableView: UITableView = {
-        let tv = UITableView()
-        tv.backgroundColor = .systemBackground
-        tv.separatorStyle = .none
-        tv.register(PodcastCell.self, forCellReuseIdentifier: PodcastCell.reuseIdentifier)
-        tv.translatesAutoresizingMaskIntoConstraints = false
-        return tv
+        let tableView = UITableView()
+        tableView.backgroundColor = .systemBackground
+        tableView.separatorStyle = .none
+        tableView.register(PodcastCell.self, forCellReuseIdentifier: PodcastCell.reuseIdentifier)
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        return tableView
     }()
     
     private let activityIndicator: UIActivityIndicatorView = {
@@ -59,7 +59,7 @@ final class SearchViewController: UIViewController {
     }
     
     @available(*, unavailable)
-    required init?(coder: NSCoder) {
+    required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
@@ -112,7 +112,7 @@ final class SearchViewController: UIViewController {
             for: UISearchTextField.textDidChangeNotification,
             object: searchController.searchBar.searchTextField
         )
-        .map { ($0.object as! UISearchTextField).text ?? "" }
+        .map { ($0.object as? UISearchTextField)?.text ?? "" }
         .debounce(for: .milliseconds(500), scheduler: DispatchQueue.main)
         .removeDuplicates()
         .sink { [weak self] text in
@@ -186,7 +186,10 @@ extension SearchViewController: UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: PodcastCell.reuseIdentifier, for: indexPath) as? PodcastCell else {
+        guard let cell = tableView.dequeueReusableCell(
+            withIdentifier: PodcastCell.reuseIdentifier,
+            for: indexPath
+        ) as? PodcastCell else {
             return UITableViewCell()
         }
         

@@ -117,15 +117,15 @@ final class ProfileViewModelTests: XCTestCase {
     }
 
     // MARK: - OPML Import Tests
-    func test_importOPML_success_updatesStateWithSuccessMessage() {
+    func test_importOPML_success_updatesStateWithSuccessMessage() throws {
         let expectation = XCTestExpectation(description: "State changes to authenticated with message")
         let expectedUser = UserProfile(id: "1", email: "test@spokast.com")
         mockAuthService.stubbedGetCurrentUserResult = .success(expectedUser)
         mockImportService.stubbedImportOPMLResult = .success(5)
 
         let sut = makeSUT()
-        let url = URL(string: "file://test.opml")!
-        
+        let url = try XCTUnwrap(URL(string: "file://test.opml"))
+
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             sut.$state
                 .dropFirst()

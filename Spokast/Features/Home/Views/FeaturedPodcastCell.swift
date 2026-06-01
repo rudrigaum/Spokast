@@ -15,13 +15,13 @@ final class FeaturedPodcastCell: UICollectionViewCell {
     
     // MARK: - UI Components
     private let imageView: UIImageView = {
-        let iv = UIImageView()
-        iv.contentMode = .scaleAspectFill
-        iv.layer.cornerRadius = 12
-        iv.clipsToBounds = true
-        iv.backgroundColor = .secondarySystemBackground
-        iv.translatesAutoresizingMaskIntoConstraints = false
-        return iv
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleAspectFill
+        imageView.layer.cornerRadius = 12
+        imageView.clipsToBounds = true
+        imageView.backgroundColor = .secondarySystemBackground
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        return imageView
     }()
     
     private let titleLabel: UILabel = {
@@ -49,7 +49,7 @@ final class FeaturedPodcastCell: UICollectionViewCell {
     }
     
     @available(*, unavailable)
-    required init?(coder: NSCoder) {
+    required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
@@ -105,7 +105,7 @@ final class FeaturedPodcastCell: UICollectionViewCell {
             
             authorLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 2),
             authorLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            authorLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            authorLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor)
         ])
     }
 }

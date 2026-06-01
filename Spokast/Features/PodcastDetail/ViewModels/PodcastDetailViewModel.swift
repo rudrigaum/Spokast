@@ -29,7 +29,7 @@ final class PodcastDetailViewModel: ObservableObject {
     // MARK: - Outputs
     @Published private(set) var episodes: [Episode] = []
     @Published private(set) var errorMessage: String?
-    @Published private(set) var currentPlayingEpisodeId: Int? = nil
+    @Published private(set) var currentPlayingEpisodeId: Int?
     @Published private(set) var isPlayerPaused: Bool = false
     @Published var isPlaying: Bool = false
     @Published var currentPlayingID: Int?
@@ -135,7 +135,8 @@ final class PodcastDetailViewModel: ObservableObject {
         if !currentSearchQuery.isEmpty {
             result = result.filter { episode in
                 let matchesTitle = episode.trackName.localizedCaseInsensitiveContains(currentSearchQuery)
-                let matchesDescription = episode.description?.localizedCaseInsensitiveContains(currentSearchQuery) ?? false
+                let matchesDescription = episode.description?.localizedCaseInsensitiveContains(currentSearchQuery)
+                ?? false
                 return matchesTitle || matchesDescription
             }
         }

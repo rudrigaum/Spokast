@@ -48,7 +48,6 @@ final class EpisodeDetailViewModel {
         return URL(string: podcast.artworkUrl100 ?? "")
     }
     
-    
     func getEpisode() -> Episode {
         return episode
     }

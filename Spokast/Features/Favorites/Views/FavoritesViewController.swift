@@ -36,10 +36,10 @@ final class FavoritesViewController: UIViewController {
         config.backgroundColor = .systemGroupedBackground
         
         let layout = UICollectionViewCompositionalLayout.list(using: config)
-        let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
-        cv.translatesAutoresizingMaskIntoConstraints = false
-        cv.delegate = self
-        return cv
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        collectionView.translatesAutoresizingMaskIntoConstraints = false
+        collectionView.delegate = self
+        return collectionView
     }()
     
     private let loadingIndicator: UIActivityIndicatorView = {
@@ -75,7 +75,7 @@ final class FavoritesViewController: UIViewController {
     }
     
     @available(*, unavailable)
-    required init?(coder: NSCoder) {
+    required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
@@ -178,10 +178,14 @@ final class FavoritesViewController: UIViewController {
         }
         
         let saveAction = UIAlertAction(title: "Save", style: .default) { [weak self, weak alert] _ in
-            guard let newName = alert?.textFields?.first?.text, !newName.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+            guard let newName = alert?.textFields?.first?.text,
+                  !newName.trimmingCharacters(in: .whitespaces).isEmpty else {
+                return
+            }
+
             self?.viewModel.updatePodcastCategory(podcastId: item.collectionId, newCategory: newName)
         }
-        
+
         let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
         
         alert.addAction(cancelAction)
@@ -199,14 +203,14 @@ final class FavoritesViewController: UIViewController {
             return collectionView.dequeueConfiguredReusableCell(using: cellRegistration, for: indexPath, item: item)
         }
         
-        dataSource.supplementaryViewProvider = { collectionView, kind, indexPath in
+        dataSource.supplementaryViewProvider = { collectionView, _, indexPath in
             return collectionView.dequeueConfiguredReusableSupplementary(using: headerRegistration, for: indexPath)
         }
     }
     
     // MARK: - Cell & Header Factories
     private func makeCellRegistration() -> UICollectionView.CellRegistration<UICollectionViewListCell, FavoriteItem> {
-        return UICollectionView.CellRegistration<UICollectionViewListCell, FavoriteItem> { [weak self] cell, indexPath, item in
+        return UICollectionView.CellRegistration<UICollectionViewListCell, FavoriteItem> { [weak self] cell, _, item in
             
             var content = cell.defaultContentConfiguration()
             
@@ -230,25 +234,27 @@ final class FavoritesViewController: UIViewController {
     }
     
     private func makeHeaderRegistration() -> UICollectionView.SupplementaryRegistration<UICollectionViewListCell> {
-        return UICollectionView.SupplementaryRegistration<UICollectionViewListCell>(elementKind: UICollectionView.elementKindSectionHeader) { [weak self] supplementaryView, elementKind, indexPath in
+        return UICollectionView.SupplementaryRegistration<UICollectionViewListCell>(
+            elementKind: UICollectionView.elementKindSectionHeader
+        ) { [weak self] supplementaryView, _, indexPath in
             guard let self = self else { return }
-            
+
             let snapshot = self.dataSource.snapshot()
             let sections = snapshot.sectionIdentifiers
-            
+
             if indexPath.section < sections.count {
                 let section = sections[indexPath.section]
                 var content = supplementaryView.defaultContentConfiguration()
-                
+
                 content.text = section.title
                 content.textProperties.font = .preferredFont(forTextStyle: .title3)
                 content.textProperties.color = .label
-                
+
                 supplementaryView.contentConfiguration = content
             }
         }
     }
-    
+
     private func loadImage(for item: FavoriteItem, into cell: UICollectionViewListCell) {
         guard let urlString = item.artworkUrl, let url = URL(string: urlString) else { return }
         
@@ -337,7 +343,11 @@ extension FavoritesViewController: UICollectionViewDelegate {
         }
     }
     
-    func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+    func collectionView(
+        _ _: UICollectionView,
+        contextMenuConfigurationForItemAt indexPath: IndexPath,
+        point _: CGPoint
+    ) -> UIContextMenuConfiguration? {
         
         guard let item = dataSource.itemIdentifier(for: indexPath) else { return nil }
         
