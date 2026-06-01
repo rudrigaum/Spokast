@@ -53,6 +53,7 @@ final class MainTabBarControllerTests: XCTestCase {
 
         miniPlayerView.onTap?()
 
-        XCTAssertNil(sut.presentedViewController, "Não deve apresentar o PlayerViewController se não houver episódio tocando")
+        XCTAssertNil(sut.presentedViewController,
+                     "Não deve apresentar o PlayerViewController se não houver episódio tocando")
     }
 }
