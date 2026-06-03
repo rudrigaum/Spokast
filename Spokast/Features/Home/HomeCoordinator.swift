@@ -59,4 +59,12 @@ extension HomeCoordinator: HomeViewControllerDelegate {
     }
 }
 
-extension HomeCoordinator: PodcastDetailCoordinatorDelegate {}
+// MARK: - PodcastDetailCoordinatorDelegate
+extension HomeCoordinator: PodcastDetailCoordinatorDelegate {
+    func showEpisodeDetails(_ episode: Episode, from podcast: Podcast) {
+        let viewModel = EpisodeDetailViewModel(episode: episode, podcast: podcast)
+
+        let episodeDetailVC = EpisodeDetailViewController(viewModel: viewModel)
+        navigationController.pushViewController(episodeDetailVC, animated: true)
+    }
+}

@@ -9,14 +9,16 @@ import Foundation
 import UIKit
 
 final class EpisodeDetailViewController: UIViewController {
-
+    
     // MARK: - Properties
     private let viewModel: EpisodeDetailViewModel
+    var onRequestFullscreenCover: ((UIImageView) -> Void)?
+    private var coverTransitionManager: FullscreenTransitionManager?
     
     private var customView: EpisodeDetailView? {
         return view as? EpisodeDetailView
     }
-
+    
     // MARK: - Init
     init(viewModel: EpisodeDetailViewModel) {
         self.viewModel = viewModel
@@ -28,7 +30,7 @@ final class EpisodeDetailViewController: UIViewController {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
+    
     // MARK: - Lifecycle
     override func loadView() {
         self.view = EpisodeDetailView()
@@ -53,6 +55,29 @@ final class EpisodeDetailViewController: UIViewController {
     private func setupActions() {
         customView?.onPlayTap = { [weak self] in
             self?.playEpisode()
+        }
+        
+        customView?.onArtworkTap = { [weak self] imageView in
+            guard let self = self else {
+                return
+            }
+            
+            guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                  let window = windowScene.windows.first(where: \.isKeyWindow) else {
+                return
+            }
+            
+            
+            let originFrame = imageView.convert(imageView.bounds, to: window)
+            let image = imageView.image
+            
+            self.coverTransitionManager = FullscreenTransitionManager(originFrame: originFrame, image: image)
+            
+            let coverVC = FullscreenCoverViewController(image: image)
+            coverVC.transitioningDelegate = self.coverTransitionManager
+            coverVC.modalPresentationStyle = .custom
+            
+            self.present(coverVC, animated: true)
         }
     }
     

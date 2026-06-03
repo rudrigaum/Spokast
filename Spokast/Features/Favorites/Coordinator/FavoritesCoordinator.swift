@@ -39,4 +39,11 @@ extension FavoritesCoordinator: PodcastSelectionDelegate {
 }
 
 
-extension FavoritesCoordinator: PodcastDetailCoordinatorDelegate {}
+// MARK: - PodcastDetailCoordinatorDelegate
+extension FavoritesCoordinator: PodcastDetailCoordinatorDelegate {
+    func showEpisodeDetails(_ episode: Episode, from podcast: Podcast) {
+        let viewModel = EpisodeDetailViewModel(episode: episode, podcast: podcast)
+        let episodeDetailVC = EpisodeDetailViewController(viewModel: viewModel)
+        navigationController.pushViewController(episodeDetailVC, animated: true)
+    }
+}
