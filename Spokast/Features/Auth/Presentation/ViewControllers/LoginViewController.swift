@@ -16,16 +16,19 @@ final class LoginViewController: UIViewController {
     private var cancellables = Set<AnyCancellable>()
     
     private var loginView: LoginView {
-        return view as! LoginView
+        guard let customView = view as? LoginView else {
+            fatalError("Expected view to be of type LoginView. Verify your loadView() method implementation.")
+        }
+        return customView
     }
-    
+
     // MARK: - Init
     init(viewModel: LoginViewModel) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
     }
     
-    required init?(coder: NSCoder) {
+    required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     

@@ -38,7 +38,7 @@ final class OPMLImportService: OPMLImportServiceProtocol {
         for item in items {
             guard item.rssURL != nil else { continue }
             
-            var category: Category? = nil
+            var category: Category?
             if let categoryName = item.categoryName {
                 category = try fetchOrCreateCategory(named: categoryName)
             }

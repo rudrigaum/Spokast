@@ -77,14 +77,14 @@ final class EpisodeDetailView: UIView {
     }()
     
     private lazy var descriptionTextView: UITextView = {
-        let tv = UITextView()
-        tv.font = .systemFont(ofSize: 16)
-        tv.isEditable = false
-        tv.isScrollEnabled = false
-        tv.backgroundColor = .clear
-        tv.textColor = .label
-        tv.translatesAutoresizingMaskIntoConstraints = false
-        return tv
+        let textView = UITextView()
+        textView.font = .systemFont(ofSize: 16)
+        textView.isEditable = false
+        textView.isScrollEnabled = false
+        textView.backgroundColor = .clear
+        textView.textColor = .label
+        textView.translatesAutoresizingMaskIntoConstraints = false
+        return textView
     }()
 
     // MARK: - Init
@@ -95,7 +95,7 @@ final class EpisodeDetailView: UIView {
     }
     
     @available(*, unavailable)
-    required init?(coder: NSCoder) {
+    required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     

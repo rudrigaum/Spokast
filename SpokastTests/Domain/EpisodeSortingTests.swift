@@ -90,13 +90,19 @@ final class EpisodeSortingTests: XCTestCase {
     func test_sorting_downloadDate() {
         let oldDownload = Date().addingTimeInterval(-3600)
         let newDownload = Date()
-        
+
         let ep1 = makeEpisode(id: 1, downloadDate: oldDownload)
         let ep2 = makeEpisode(id: 2, downloadDate: newDownload)
         let epSemDownload = makeEpisode(id: 3, downloadDate: nil)
-        
-        XCTAssertTrue(EpisodeSorting.downloadDate.comparator(ep2, ep1), "Download Date failed to prioritize newer")
-        XCTAssertTrue(EpisodeSorting.downloadDate.comparator(ep1, epSemDownload), "Download Date failed to prioritize downloaded")
+
+        XCTAssertTrue(
+            EpisodeSorting.downloadDate.comparator(ep2, ep1),
+            "Download Date failed to prioritize newer"
+        )
+        XCTAssertTrue(
+            EpisodeSorting.downloadDate.comparator(ep1, epSemDownload),
+            "Download Date failed to prioritize downloaded"
+        )
     }
     
     func test_sorting_durationLongestAndShortest() {

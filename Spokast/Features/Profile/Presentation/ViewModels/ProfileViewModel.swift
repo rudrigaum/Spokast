@@ -39,7 +39,6 @@ final class ProfileViewModel: ProfileViewModelProtocol {
     
     var onLoginRequest: ((Bool) -> Void)?
     
-    
     // MARK: - Init
     init(authService: AuthServiceProtocol,
          importService: OPMLImportServiceProtocol) {
@@ -106,7 +105,6 @@ final class ProfileViewModel: ProfileViewModelProtocol {
                 } else {
                     state = .unauthenticated
                 }
-                
             } catch {
                 state = .error(message: "Import failed: \(error.localizedDescription)")
             }

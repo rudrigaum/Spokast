@@ -23,14 +23,14 @@ final class DatabaseService {
                 Category.self,
                 SavedPodcast.self
             ])
-            
+
             let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-            
+            let path = modelConfiguration.url.path(percentEncoded: false)
+
             self.container = try ModelContainer(for: schema, configurations: [modelConfiguration])
             self.context = container.mainContext
-            
-            print("✅ DatabaseService initialized successfully with path: \(modelConfiguration.url.path(percentEncoded: false))")
-            
+
+            print("✅ DatabaseService initialized successfully with path: \(path)")
         } catch {
             fatalError("❌ Failed to initialize DatabaseService: \(error)")
         }

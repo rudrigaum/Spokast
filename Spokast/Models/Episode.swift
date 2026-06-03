@@ -25,8 +25,8 @@ struct Episode: Codable, Identifiable, Equatable {
     let artistName: String?
     
     // MARK: - Local State
-    var downloadDate: Date? = nil
-    var fileSize: Int64? = nil
+    var downloadDate: Date?
+    var fileSize: Int64?
     var playbackProgress: Double = 0.0
     var rating: Int = 0
     

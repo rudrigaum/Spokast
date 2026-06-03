@@ -48,7 +48,13 @@ final class OPMLParser: NSObject {
 
 extension OPMLParser: XMLParserDelegate {
     
-    func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
+    func parser(
+        _ parser: XMLParser,
+        didStartElement elementName: String,
+        namespaceURI: String?,
+        qualifiedName qName: String?,
+        attributes attributeDict: [String: String] = [:]
+    ) {
         if parseError != nil { return }
         
         guard elementName == "outline" else {
@@ -65,7 +71,7 @@ extension OPMLParser: XMLParserDelegate {
         let htmlUrl = attributeDict["htmlUrl"]
         
         if let feedUrl = xmlUrl, let feedTitle = title {
-
+            
             let currentCategory = categoryStack.last?.name
             
             let item = OPMLItem(
@@ -75,13 +81,17 @@ extension OPMLParser: XMLParserDelegate {
                 categoryName: currentCategory
             )
             items.append(item)
-            
         } else if let folderTitle = title {
             categoryStack.append((name: folderTitle, depth: currentDepth))
         }
     }
-    
-    func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName qName: String?) {
+
+    func parser(
+        _ parser: XMLParser,
+        didEndElement elementName: String,
+        namespaceURI: String?,
+        qualifiedName qName: String?
+    ) {
         if parseError != nil { return }
         
         if elementName == "outline" {
@@ -94,7 +104,7 @@ extension OPMLParser: XMLParserDelegate {
             currentDepth -= 1
         }
     }
-    
+
     func parser(_ parser: XMLParser, parseErrorOccurred parseError: Error) {
         self.parseError = parseError
     }

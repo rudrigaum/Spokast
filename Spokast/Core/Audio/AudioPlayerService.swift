@@ -62,7 +62,7 @@ final class AudioPlayerService: NSObject, AudioPlayerServiceProtocol {
     var currentPodcastImageURL: URL?
     
     // MARK: - Initialization
-    private override init() {
+    override init() {
         super.init()
         setupAudioSession()
         setupRemoteCommands()
@@ -79,21 +79,24 @@ final class AudioPlayerService: NSObject, AudioPlayerServiceProtocol {
     // MARK: - Main Methods
     func play(episode: Episode, from podcast: Podcast) {
         self.currentEpisode = episode
-        
-        let artworkString = episode.artworkUrl600 ?? episode.artworkUrl160 ?? podcast.artworkUrl600 ?? podcast.artworkUrl100 ?? ""
+
+        let artworkString = episode.artworkUrl600
+        ?? episode.artworkUrl160
+        ?? podcast.artworkUrl600
+        ?? podcast.artworkUrl100
+        ?? ""
+
         self.currentPodcastImageURL = URL(string: artworkString)
-        
+
         if let url = episode.streamUrl {
             self.play(url: url)
-        }
-        
-        else if let previewUrl = episode.previewUrl, let url = URL(string: previewUrl) {
+        } else if let previewUrl = episode.previewUrl, let url = URL(string: previewUrl) {
             self.play(url: url)
         } else {
             print("❌ AudioPlayerService: No valid audio URL found for episode '\(episode.trackName)'")
         }
     }
-    
+
     func play(url: URL) {
         if case .paused(let currentUrl) = playerStatePublisher.value, currentUrl == url {
             player?.play()
@@ -184,7 +187,6 @@ final class AudioPlayerService: NSObject, AudioPlayerServiceProtocol {
             Task { @MainActor [weak self] in
                 guard let self = self else { return }
                 
-                
                 if object == self.player?.currentItem {
                     self.handlePlaybackEnded()
                 }
@@ -235,13 +237,13 @@ final class AudioPlayerService: NSObject, AudioPlayerServiceProtocol {
         }
         
         commandCenter.skipBackwardCommand.preferredIntervals = [15]
-        commandCenter.skipBackwardCommand.addTarget { [weak self] event in
+        commandCenter.skipBackwardCommand.addTarget { [weak self] _ in
             self?.seekRelative(by: -15)
             return .success
         }
         
         commandCenter.skipForwardCommand.preferredIntervals = [30]
-        commandCenter.skipForwardCommand.addTarget { [weak self] event in
+        commandCenter.skipForwardCommand.addTarget { [weak self] _ in
             self?.seekRelative(by: 30)
             return .success
         }
@@ -267,42 +269,59 @@ final class AudioPlayerService: NSObject, AudioPlayerServiceProtocol {
             MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
             return
         }
-        
-        var nowPlayingInfo = [String: Any]()
-        
-        nowPlayingInfo[MPMediaItemPropertyTitle] = episode.trackName
-        nowPlayingInfo[MPMediaItemPropertyArtist] = episode.collectionName ?? episode.artistName ?? "Spokast"
-        
-        let duration = player.currentItem?.duration.seconds
-        let safeDuration = (duration?.isFinite == true) ? duration! : 0.0
-        let currentTime = player.currentTime().seconds
-        let playbackRate = player.rate
-        
-        nowPlayingInfo[MPMediaItemPropertyPlaybackDuration] = NSNumber(value: safeDuration)
-        nowPlayingInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = NSNumber(value: currentTime)
-        nowPlayingInfo[MPNowPlayingInfoPropertyPlaybackRate] = NSNumber(value: playbackRate)
-        
+
+        let nowPlayingInfo = createBaseMetadata(for: episode, with: player)
+
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
-        
+
         if let imageURL = currentPodcastImageURL {
-            
-            DispatchQueue.global().async {
-                if let data = try? Data(contentsOf: imageURL), let image = UIImage(data: data) {
-                    let artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in return image }
-                    
-                    DispatchQueue.main.async { [weak self] in
-                        guard let self = self, let player = self.player else { return }
-                        var currentInfo = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [String: Any]()
-                        currentInfo[MPMediaItemPropertyArtwork] = artwork
-                        currentInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = NSNumber(value: player.currentTime().seconds)
-                        currentInfo[MPNowPlayingInfoPropertyPlaybackRate] = NSNumber(value: player.rate)
-                        MPNowPlayingInfoCenter.default().nowPlayingInfo = currentInfo
-                    }
-                }
+            updateArtworkInNowPlayingInfo(from: imageURL)
+        }
+    }
+
+    private func createBaseMetadata(for episode: Episode, with player: AVPlayer) -> [String: Any] {
+        var info = [String: Any]()
+
+        info[MPMediaItemPropertyTitle] = episode.trackName
+        info[MPMediaItemPropertyArtist] = episode.collectionName ?? episode.artistName ?? "Spokast"
+
+        let duration = player.currentItem?.duration.seconds
+
+        let safeDuration = (duration?.isFinite == true) ? (duration ?? 0.0) : 0.0
+        let currentTime = player.currentTime().seconds
+
+        info[MPMediaItemPropertyPlaybackDuration] = NSNumber(value: safeDuration)
+        info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = NSNumber(value: currentTime)
+        info[MPNowPlayingInfoPropertyPlaybackRate] = NSNumber(value: player.rate)
+
+        return info
+    }
+
+    private func updateArtworkInNowPlayingInfo(from url: URL) {
+        DispatchQueue.global().async {
+            guard let data = try? Data(contentsOf: url),
+                  let image = UIImage(data: data) else { return }
+
+            let artwork = MPMediaItemArtwork(boundsSize: image.size) { _ in return image }
+
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self, let player = self.player else { return }
+
+                var currentInfo = MPNowPlayingInfoCenter.default().nowPlayingInfo ?? [String: Any]()
+                currentInfo[MPMediaItemPropertyArtwork] = artwork
+
+                currentInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = NSNumber(
+                    value: player.currentTime().seconds
+                )
+                currentInfo[MPNowPlayingInfoPropertyPlaybackRate] = NSNumber(
+                    value: player.rate
+                )
+
+                MPNowPlayingInfoCenter.default().nowPlayingInfo = currentInfo
             }
         }
     }
-    
+
     // MARK: - Time Observer
     private func setupPeriodicTimeObserver() {
         guard let player = player else { return }

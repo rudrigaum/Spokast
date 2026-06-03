@@ -27,7 +27,7 @@ final class CoreDataService {
             container.persistentStoreDescriptions = [description]
         }
 
-        container.loadPersistentStores { (storeDescription, error) in
+        container.loadPersistentStores { (_, error) in
             if let error = error as NSError? {
                 fatalError("❌ Core Data Store failed to load: \(error), \(error.userInfo)")
             }

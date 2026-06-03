@@ -38,7 +38,6 @@ extension FavoritesCoordinator: PodcastSelectionDelegate {
     }
 }
 
-
 // MARK: - PodcastDetailCoordinatorDelegate
 extension FavoritesCoordinator: PodcastDetailCoordinatorDelegate {
     func showEpisodeDetails(_ episode: Episode, from podcast: Podcast) {
