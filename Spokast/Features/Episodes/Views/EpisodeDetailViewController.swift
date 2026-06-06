@@ -67,7 +67,6 @@ final class EpisodeDetailViewController: UIViewController {
                 return
             }
             
-            
             let originFrame = imageView.convert(imageView.bounds, to: window)
             let image = imageView.image
             

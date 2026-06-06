@@ -39,9 +39,14 @@ final class CoverTransitionAnimator: NSObject, UIViewControllerAnimatedTransitio
     }
 
     // MARK: - Presentation Animation
-    private func animatePresentation(using transitionContext: UIViewControllerContextTransitioning, in containerView: UIView) {
-        guard let toVC = transitionContext.viewController(forKey: .to) as? FullscreenCoverViewController,
-              let toView = transitionContext.view(forKey: .to) else {
+    private func animatePresentation(
+        using transitionContext: UIViewControllerContextTransitioning,
+        in containerView: UIView
+    ) {
+        guard
+            let toVC = transitionContext.viewController(forKey: .to) as? FullscreenCoverViewController,
+            let toView = transitionContext.view(forKey: .to)
+        else {
             transitionContext.completeTransition(false)
             return
         }
@@ -52,18 +57,12 @@ final class CoverTransitionAnimator: NSObject, UIViewControllerAnimatedTransitio
 
         let destinationImageView = toVC.getImageView()
         let customCoverView = toVC.getCustomView()
-
         let destinationFrame = destinationImageView?.frame ?? .zero
 
         destinationImageView?.alpha = 0
         customCoverView?.setBlurAlpha(0)
 
-        let flyingImageView = UIImageView(frame: originFrame)
-        flyingImageView.image = image
-        flyingImageView.contentMode = .scaleAspectFill
-        flyingImageView.clipsToBounds = true
-        flyingImageView.layer.cornerRadius = 10
-
+        let flyingImageView = createFlyingImageView()
         containerView.addSubview(flyingImageView)
 
         let duration = transitionDuration(using: transitionContext)
@@ -87,18 +86,32 @@ final class CoverTransitionAnimator: NSObject, UIViewControllerAnimatedTransitio
         )
     }
 
+    // MARK: - Helpers
+    private func createFlyingImageView() -> UIImageView {
+        let flyingImageView = UIImageView(frame: originFrame)
+        flyingImageView.image = image
+        flyingImageView.contentMode = .scaleAspectFill
+        flyingImageView.clipsToBounds = true
+        flyingImageView.layer.cornerRadius = 10
+        return flyingImageView
+    }
+
     // MARK: - Dismissal Animation
-    private func animateDismissal(using transitionContext: UIViewControllerContextTransitioning, in containerView: UIView) {
-        guard let fromVC = transitionContext.viewController(forKey: .from) as? FullscreenCoverViewController else {
-            transitionContext.completeTransition(false)
-            return
-        }
+    private func animateDismissal(
+        using transitionContext: UIViewControllerContextTransitioning,
+        in containerView: UIView
+    ) {
+        guard
+            let fromVC = transitionContext.viewController(forKey: .from) as? FullscreenCoverViewController
+        else {
+        transitionContext.completeTransition(false)
+        return
+    }
 
         let startImageView = fromVC.getImageView()
         let customCoverView = fromVC.getCustomView()
 
         let startFrame = startImageView?.frame ?? .zero
-
         startImageView?.alpha = 0
 
         let flyingImageView = UIImageView(frame: startFrame)
