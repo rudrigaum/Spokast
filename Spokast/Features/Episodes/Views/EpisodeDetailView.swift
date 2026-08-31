@@ -13,6 +13,7 @@ final class EpisodeDetailView: UIView {
     
     // MARK: - Actions
     var onPlayTap: (() -> Void)?
+    var onArtworkTap: ((UIImageView) -> Void)?
 
     // MARK: - UI Components
     private lazy var scrollView: UIScrollView = {
@@ -34,6 +35,9 @@ final class EpisodeDetailView: UIView {
         imageView.clipsToBounds = true
         imageView.backgroundColor = .secondarySystemBackground
         imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.isUserInteractionEnabled = true
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(didTapArtwork))
+        imageView.addGestureRecognizer(tapGesture)
         return imageView
     }()
     
@@ -153,5 +157,9 @@ final class EpisodeDetailView: UIView {
     
     @objc private func didTapPlay() {
         onPlayTap?()
+    }
+
+    @objc private func didTapArtwork() {
+        onArtworkTap?(artworkImageView)
     }
 }
