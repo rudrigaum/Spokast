@@ -5,30 +5,37 @@
 //  Created by Rodrigo Cerqueira Reis on 26/09/25.
 //
 
-import Foundation
 import UIKit
 
 final class HomeView: UIView {
-    
+
     // MARK: - UI Components
     lazy var collectionView: UICollectionView = {
         let layout = createCompositionalLayout()
-        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        let collectionView = UICollectionView(
+            frame: .zero,
+            collectionViewLayout: layout
+        )
+
         collectionView.backgroundColor = .systemBackground
-        
         collectionView.register(
             FeaturedPodcastCell.self,
             forCellWithReuseIdentifier: FeaturedPodcastCell.reuseIdentifier
         )
-
         collectionView.register(
             HomeSectionHeader.self,
             forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
             withReuseIdentifier: HomeSectionHeader.reuseIdentifier
         )
-
         collectionView.translatesAutoresizingMaskIntoConstraints = false
+
         return collectionView
+    }()
+
+    let searchResultsView: DiscoverSearchResultsView = {
+        let view = DiscoverSearchResultsView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
     }()
 
     let activityIndicator: UIActivityIndicatorView = {
@@ -37,64 +44,89 @@ final class HomeView: UIView {
         spinner.translatesAutoresizingMaskIntoConstraints = false
         return spinner
     }()
-    
-    // MARK: - Init
+
+    // MARK: - Initialization
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupLayout()
     }
-    
+
     @available(*, unavailable)
-    required init?(coder _: NSCoder) {
+    required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     // MARK: - Compositional Layout
     private func createCompositionalLayout() -> UICollectionViewLayout {
-        return UICollectionViewCompositionalLayout { (_, _) -> NSCollectionLayoutSection? in
-            
-            let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0),
-                                                  heightDimension: .fractionalHeight(1.0))
+        UICollectionViewCompositionalLayout { _, _ -> NSCollectionLayoutSection? in
+            let itemSize = NSCollectionLayoutSize(
+                widthDimension: .fractionalWidth(1.0),
+                heightDimension: .fractionalHeight(1.0)
+            )
+
             let item = NSCollectionLayoutItem(layoutSize: itemSize)
-            let groupSize = NSCollectionLayoutSize(widthDimension: .absolute(160),
-                                                   heightDimension: .absolute(220))
-            let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
+
+            let groupSize = NSCollectionLayoutSize(
+                widthDimension: .absolute(160),
+                heightDimension: .absolute(220)
+            )
+
+            let group = NSCollectionLayoutGroup.horizontal(
+                layoutSize: groupSize,
+                subitems: [item]
+            )
+
             let section = NSCollectionLayoutSection(group: group)
             section.orthogonalScrollingBehavior = .continuous
             section.interGroupSpacing = 16
-            section.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 16, bottom: 30, trailing: 16)
-            
-            let headerSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0),
-                                                    heightDimension: .absolute(40))
+            section.contentInsets = NSDirectionalEdgeInsets(
+                top: 10,
+                leading: 16,
+                bottom: 30,
+                trailing: 16
+            )
+
+            let headerSize = NSCollectionLayoutSize(
+                widthDimension: .fractionalWidth(1.0),
+                heightDimension: .absolute(40)
+            )
+
             let header = NSCollectionLayoutBoundarySupplementaryItem(
                 layoutSize: headerSize,
                 elementKind: UICollectionView.elementKindSectionHeader,
                 alignment: .top
             )
+
             section.boundarySupplementaryItems = [header]
-            
+
             return section
         }
     }
-    
+
     // MARK: - View Code Setup
     private func setupLayout() {
         backgroundColor = .systemBackground
-        
+
         addSubview(collectionView)
+        addSubview(searchResultsView)
         addSubview(activityIndicator)
-        
+
         NSLayoutConstraint.activate([
             collectionView.topAnchor.constraint(equalTo: topAnchor),
             collectionView.leadingAnchor.constraint(equalTo: leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: trailingAnchor),
             collectionView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            
+
+            searchResultsView.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor),
+            searchResultsView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            searchResultsView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            searchResultsView.bottomAnchor.constraint(equalTo: bottomAnchor),
+
             activityIndicator.centerXAnchor.constraint(equalTo: centerXAnchor),
             activityIndicator.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])
     }
-    
+
     // MARK: - Public Methods
     func showLoading(_ isLoading: Bool) {
         if isLoading {
