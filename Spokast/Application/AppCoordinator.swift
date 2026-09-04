@@ -5,95 +5,97 @@
 //  Created by Rodrigo Cerqueira Reis on 26/09/25.
 //
 
-import Foundation
 import UIKit
 
 final class AppCoordinator: Coordinator {
-    
+
     // MARK: - Properties
     var navigationController: UINavigationController
     var childCoordinators: [Coordinator] = []
+
     let window: UIWindow
-    
-    // MARK: - Init
+
+    // MARK: - Initialization
     init(window: UIWindow) {
         self.window = window
-        self.navigationController = UINavigationController()
+        navigationController = UINavigationController()
     }
-    
-    // MARK: - Start
+
+    // MARK: - Coordinator
     func start() {
-        let homeNav = makeHomeFlow()
-        let searchNav = makeSearchFlow()
-        let favNav = makeFavoritesFlow()
-        let profileNav = makeProfileFlow()
-        
-        let viewControllers = [homeNav, searchNav, favNav, profileNav]
-        let mainTabBar = MainTabBarController(viewControllers: viewControllers)
-        
-        window.rootViewController = mainTabBar
+        let homeNavigationController = makeHomeFlow()
+        let favoritesNavigationController = makeFavoritesFlow()
+        let profileNavigationController = makeProfileFlow()
+
+        let viewControllers = [
+            homeNavigationController,
+            favoritesNavigationController,
+            profileNavigationController
+        ]
+
+        let mainTabBarController = MainTabBarController(
+            viewControllers: viewControllers
+        )
+
+        window.rootViewController = mainTabBarController
         window.makeKeyAndVisible()
     }
-    
-    // MARK: - Private Factory Methods
+
+    // MARK: - Flow Factories
     private func makeHomeFlow() -> UINavigationController {
-        let navController = UINavigationController()
-        navController.tabBarItem = UITabBarItem(
+        let navigationController = UINavigationController()
+
+        navigationController.tabBarItem = UITabBarItem(
             title: "Discover",
             image: UIImage(systemName: "waveform"),
             selectedImage: UIImage(systemName: "waveform.circle.fill")
         )
-        
-        let coordinator = HomeCoordinator(navigationController: navController)
-        childCoordinators.append(coordinator)
-        coordinator.start()
-        
-        return navController
-    }
-    
-    private func makeSearchFlow() -> UINavigationController {
-        let navController = UINavigationController()
-        navController.tabBarItem = UITabBarItem(
-            title: "Search",
-            image: UIImage(systemName: "magnifyingglass"),
-            selectedImage: UIImage(systemName: "magnifyingglass.circle.fill")
+
+        let coordinator = HomeCoordinator(
+            navigationController: navigationController
         )
-        
-        let coordinator = SearchCoordinator(navigationController: navController)
+
         childCoordinators.append(coordinator)
         coordinator.start()
-        
-        return navController
+
+        return navigationController
     }
-    
+
     private func makeFavoritesFlow() -> UINavigationController {
-        let navController = UINavigationController()
-        navController.tabBarItem = UITabBarItem(
+        let navigationController = UINavigationController()
+
+        navigationController.tabBarItem = UITabBarItem(
             title: "Favorites",
             image: UIImage(systemName: "star"),
             selectedImage: UIImage(systemName: "star.fill")
         )
-        
-        let coordinator = FavoritesCoordinator(navigationController: navController)
+
+        let coordinator = FavoritesCoordinator(
+            navigationController: navigationController
+        )
+
         childCoordinators.append(coordinator)
         coordinator.start()
-        
-        return navController
+
+        return navigationController
     }
-    
+
     private func makeProfileFlow() -> UINavigationController {
-        let navController = UINavigationController()
-        
-        navController.tabBarItem = UITabBarItem(
+        let navigationController = UINavigationController()
+
+        navigationController.tabBarItem = UITabBarItem(
             title: "Profile",
             image: UIImage(systemName: "person.circle"),
             selectedImage: UIImage(systemName: "person.circle.fill")
         )
-        
-        let coordinator = ProfileCoordinator(navigationController: navController)
+
+        let coordinator = ProfileCoordinator(
+            navigationController: navigationController
+        )
+
         childCoordinators.append(coordinator)
         coordinator.start()
-        
-        return navController
+
+        return navigationController
     }
 }
